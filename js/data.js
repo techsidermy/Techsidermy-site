@@ -12,6 +12,30 @@
 
 window.SPECIMENS = [
   {
+    num: '0002',
+    name: 'PEN E-PL1',
+    series: 'Lab specimen',
+    device: 'Olympus PEN E-PL1 · M.Zuiko 14–42mm',
+    issued: '2010',
+    origin: 'Arizona, USA',
+    received: '10.15.2026',
+    status: 'dissection',
+    statusLabel: 'In dissection',
+    kind: 'edition',
+    price: null,            // ← set a price + status 'available' + checkout link when it's finished
+    size: '11 × 14 in · white wood',
+    edition: '1 of 1',
+    checkout: '',
+    note: 'When you’re rich you don’t take photos, you just see it again.',
+    summary: 'Acquired in Arizona. A mirrorless camera and its kit zoom, fourteen components, mounted at 1:1.',
+    parts: ['Front cover', 'Rear cover', 'Main board', 'LCD', 'Sensor · IS', 'M.Zuiko 14–42', 'Lens mount', 'Body mount', 'Lens cap', 'Top deck', 'Shutter unit', 'Battery', 'Flash', 'Screws'],
+    images: [
+      { src: 'assets/img/0002-blueprint.webp', alt: 'Specimen 0002 blueprint: every component outlined at 1:1' },
+      { src: 'assets/img/0002-device.webp', alt: 'The PEN E-PL1 body as received' },
+      { src: 'assets/img/0002-lens.webp', alt: 'The M.Zuiko 14–42mm lens as received' }
+    ]
+  },
+  {
     num: '0004',
     hidden: true,            // ← set to false to show in the Archive
     name: 'Home Console',
@@ -41,6 +65,7 @@ window.SPECIMENS = [
     device: 'iPhone SE · 2nd generation',
     issued: '2020',
     origin: 'Kansas, USA',
+    received: '10.15.2026',
     status: 'dissection',
     statusLabel: 'In dissection',
     kind: 'commission',
@@ -56,26 +81,6 @@ window.SPECIMENS = [
       { src: 'assets/img/0001-plate.webp', alt: 'Specimen 0001 plate with mounted iPhone components' },
       { src: 'assets/img/0001-device.webp', alt: 'The iPhone SE as received' }
     ]
-  },
-  {
-    num: '0002',
-    hidden: true,            // ← set to false to show in the Archive
-    name: 'N64 Controller',
-    series: 'Commission',
-    device: 'Controller NUS-005 · Atomic Purple',
-    issued: '1996',
-    origin: 'Michigan, USA',
-    status: 'transit',
-    statusLabel: 'In transit',
-    kind: 'commission',
-    price: null,
-    size: '11 × 14 in · white wood',
-    edition: 'Private client',
-    checkout: '',
-    note: '',
-    summary: 'A translucent Atomic Purple controller en route from Michigan. Up next on the bench.',
-    parts: ['L button', 'D-pad', 'Start', 'Control stick', 'R button', 'C buttons', 'A / B buttons', 'Shell'],
-    images: [ { src: 'assets/img/0002-device.webp', alt: 'Nintendo 64 controller, translucent purple' } ]
   },
   {
     num: '0003',
@@ -141,7 +146,7 @@ window.SPECIMENS = [
 
 /* Empty, numbered drawers shown after the real specimens: the Archive's
    "still being filled" state. Lower this as real specimens are added. */
-window.ARCHIVE_SLOTS = 5;
+window.ARCHIVE_SLOTS = 4;
 
 /* Commission pricing, shown on the Submit page */
 window.COMMISSION = {

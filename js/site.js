@@ -106,7 +106,7 @@
     const media = img
       ? `<img src="${img.src}" alt="${img.alt}" loading="lazy" class="${img.full ? 'full' : ''}">`
       : `<div class="schematic"><span class="label">Awaiting specimen</span></div>`;
-    const price = s.price ? money(s.price) : (s.kind === 'commission' ? 'Private' : '—');
+    const price = s.price ? money(s.price) : (s.kind === 'commission' ? 'Private' : '');
     return `
       <button class="card rv" data-i="${i}" aria-haspopup="dialog">
         <div class="media">${media}<span class="num">Nº ${s.num}</span><span class="ghost-num" aria-hidden="true">${s.num}</span></div>
@@ -133,6 +133,10 @@
     return out;
   }
 
+  const reservedHTML = (num) => `<div class="slot slot--reserved rv" aria-label="Drawer ${num}, reserved">
+      <div class="media"><span class="num">Nº ${num}</span><span class="ghost-num" aria-hidden="true">${num}</span></div>
+      <div class="body"><span class="status" data-s="transit">Reserved</span><span class="name">In the queue</span><span class="meta">Specimen assigned</span></div></div>`;
+
   const grid = $('#archive-grid');
   if (grid && window.SPECIMENS) {
     const forSale = (sp) => !!sp.price && (sp.status === 'available' || sp.status === 'reserve');
@@ -140,10 +144,16 @@
     const note = $('#avail-note');
     const render = () => {
       const first = toggle && toggle.getAttribute('aria-pressed') === 'true';
-      let list = visible();
+      let list = visible().sort((a, b) => parseInt(a[0].num, 10) - parseInt(b[0].num, 10));
       if (first) list = list.filter(([sp]) => forSale(sp)).concat(list.filter(([sp]) => !forSale(sp)));
       const slots = window.ARCHIVE_SLOTS || 0;
-      grid.innerHTML = list.map(([sp, i]) => cardHTML(sp, i)).join('') + slotsHTML(slots);
+      // numbers already assigned to specimens still in the queue show as reserved drawers
+      const have = new Set(list.map(([sp]) => parseInt(sp.num, 10)));
+      const maxN = Math.max(0, ...have);
+      const cells = list.map(([sp, i]) => [parseInt(sp.num, 10), cardHTML(sp, i)]);
+      for (let k = 1; k < maxN; k++) if (!have.has(k)) cells.push([k, reservedHTML(String(k).padStart(4, '0'))]);
+      if (!first) cells.sort((a, b) => a[0] - b[0]);
+      grid.innerHTML = cells.map((c) => c[1]).join('') + slotsHTML(slots);
       const n = list.filter(([sp]) => forSale(sp)).length;
       if (note) note.hidden = !(first && n === 0);
       const cnt = $('#archive-count');
@@ -183,7 +193,7 @@
       <aside class="dialog" id="spec-dialog" role="dialog" aria-modal="true" aria-labelledby="d-title">
         <div class="d-head"><span class="label label--accent" id="d-num"></span><button class="close" id="d-close">Close</button></div>
         <div class="d-body">
-          <div class="d-media"><div class="stage" id="d-stage"></div><div class="thumbs" id="d-thumbs"></div></div>
+          <div class="d-media"><div class="stage" id="d-stage"></div><span class="label" id="d-groups"></span><div class="thumbs" id="d-thumbs"></div></div>
           <div class="d-info" id="d-info"></div>
         </div>
       </aside>`);
@@ -191,10 +201,11 @@
     $('#scrim').addEventListener('click', closeSpecimen);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSpecimen(); });
   }
-  function setStage(img) {
-    $('#d-stage').innerHTML = img
-      ? `<img src="${img.src}" alt="${img.alt}" class="${img.full ? 'full' : ''}">`
-      : `<div class="schematic"><span class="label">Awaiting specimen</span></div>`;
+  function setStage(img, cap) {
+    $('#d-stage').innerHTML = (img
+      ? `<img src="${img.src}" alt="${img.alt || ''}" class="${img.full ? 'full' : ''}">`
+      : `<div class="schematic"><span class="label">Awaiting specimen</span></div>`)
+      + (cap ? `<div class="stage-cap"><span class="label label--accent">${cap.n} · ${cap.name}</span><span class="mono-sm">${cap.spec} · ${cap.note}</span></div>` : '');
   }
   function openSpecimen(i, fromEl) {
     ensureDialog();
@@ -203,12 +214,14 @@
     $('#d-num').textContent = `Specimen Nº ${s.num} · ${s.series}`;
     setStage(s.images[0]);
     $('#d-thumbs').innerHTML = s.images.length > 1 ? s.images.map((im, k) =>
-      `<button aria-current="${k === 0}" data-k="${k}"><img src="${im.src}" alt=""></button>`).join('') : '';
+      `<button aria-current="${k === 0}" data-k="${k}" title="${im.alt || ''}"><img src="${im.src}" alt=""></button>`).join('') : '';
+    const groups = [...new Set(s.images.map((im) => im.group).filter(Boolean))];
+    $('#d-groups').textContent = groups.length ? groups.join(' · ') : '';
     $$('#d-thumbs button').forEach((b) => b.addEventListener('click', () => {
-      $$('#d-thumbs button').forEach((x) => x.setAttribute('aria-current', x === b));
+      $$('#d-thumbs button, .comp').forEach((x) => x.setAttribute('aria-current', x === b));
       setStage(s.images[+b.dataset.k]);
     }));
-    const rows = [['Device', s.device], ['Issued', s.issued], ['Origin', s.origin], ['Format', s.size], ['Edition', s.edition]]
+    const rows = [['Device', s.device], ['Issued', s.issued], ['Origin', s.origin], ['Received', s.received], ['Format', s.size], ['Edition', s.edition]]
       .filter(([, v]) => v);
     let buy = '';
     if (s.price && (s.status === 'available' || s.status === 'reserve')) {
@@ -229,10 +242,19 @@
         <p class="mono-sm mt-1">${s.summary}</p></div>
       <div class="record"><header><span class="label">Specimen record</span><span class="label label--accent">Nº ${s.num}</span></header>
         <dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>
-      ${s.note ? `<div><span class="label">Client note</span><p class="note mt-1">“${s.note}”</p></div>` : ''}
-      ${s.parts.length ? `<div><span class="label">Components · ${s.parts.length}</span>
-        <ul class="parts mt-1">${s.parts.map((p, k) => `<li><b>${String(k + 1).padStart(2, '0')}</b>${p}</li>`).join('')}</ul></div>` : ''}
+      ${s.note ? `<div><span class="label">${s.kind === 'commission' ? 'Client note' : 'Lab note'}</span><p class="note mt-1">“${s.note}”</p></div>` : ''}
+      ${s.components ? `<div><div class="row-between"><span class="label">Components · ${s.components.length}</span><span class="label">Tap to inspect</span></div>
+        <div class="comp-grid mt-1">${s.components.map((c, k) => `<button class="comp" data-c="${k}" aria-current="false">
+          <img src="${c.img}" alt="${c.name}" loading="lazy"><span class="cn">${c.n}</span><span class="ct">${c.name}</span><span class="cs">${c.spec}</span></button>`).join('')}</div></div>`
+      : (s.parts.length ? `<div><span class="label">Components · ${s.parts.length}</span>
+        <ul class="parts mt-1">${s.parts.map((p, k) => `<li><b>${String(k + 1).padStart(2, '0')}</b>${p}</li>`).join('')}</ul></div>` : '')}
       ${buy}`;
+    $$('.comp', $('#d-info')).forEach((b) => b.addEventListener('click', () => {
+      const c = s.components[+b.dataset.c];
+      $$('#d-thumbs button, .comp').forEach((x) => x.setAttribute('aria-current', x === b));
+      setStage({ src: c.img, alt: c.name, full: true }, c);
+      if (window.innerWidth <= 860) $('#d-stage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }));
     $('#scrim').classList.add('on');
     const dlg = $('#spec-dialog');
     dlg.classList.add('on');
@@ -323,7 +345,7 @@
       $('#preview').innerHTML = `
         <header><span class="label">Queue record · draft</span><span class="label label--accent">Nº pending</span></header>
         <dl>${rows.map(([k, x]) => `<dt>${k}</dt><dd>${x.replace(/</g, '&lt;')}</dd>`).join('')}</dl>
-        ${v('note') ? `<div class="pnote"><span class="label">Client note</span><p class="note mt-1">“${v('note').replace(/</g, '&lt;')}”</p></div>` : ''}`;
+        ${v('note') ? `<div class="pnote"><span class="label">${s.kind === 'commission' ? 'Client note' : 'Lab note'}</span><p class="note mt-1">“${v('note').replace(/</g, '&lt;')}”</p></div>` : ''}`;
     }
     back.addEventListener('click', () => go(Math.max(0, at - 1)));
     next.addEventListener('click', async () => {

@@ -562,3 +562,24 @@ a.slot:hover .media::before, a.slot:hover .media::after { background: var(--trac
 @media (max-width: 620px) { .legend { gap: 8px 16px; } .bar-right { width: 100%; justify-content: space-between; } }
 
 .filter-row { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+
+/* specimen gallery: component tiles + stage caption */
+.d-media { position: sticky; top: 57px; align-self: start; }
+@media (max-width: 860px) { .d-media { position: static; } }
+.thumbs { flex-wrap: wrap; }
+.thumbs button { width: 56px; height: 56px; }
+.stage-cap { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 6px; padding: 14px 16px; background: rgba(252,252,251,.94); border-top: 1px solid var(--rule); }
+.stage-cap .mono-sm { font-size: 12px; }
+.comp-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.comp { position: relative; display: grid; gap: 3px; padding: 0 0 10px; text-align: left; background: var(--paper); border: 1px solid var(--rule); transition: border-color .2s, transform .25s var(--ease); }
+.comp img { width: 100%; aspect-ratio: 1; object-fit: cover; border-bottom: 1px solid var(--rule); margin-bottom: 6px; }
+.comp .cn { position: absolute; left: 6px; top: 6px; font: 400 9.5px/1 var(--f-mono); letter-spacing: .14em; color: var(--accent); background: var(--paper); padding: 3px 4px; }
+.comp .ct { padding: 0 8px; font: 600 13px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .03em; }
+.comp .cs { padding: 0 8px; font: 400 9.5px/1.3 var(--f-mono); letter-spacing: .06em; color: var(--ink-3); text-transform: uppercase; }
+.comp:hover { border-color: var(--ink); transform: translateY(-2px); }
+.comp[aria-current="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.comp[aria-current="true"] .cn { background: var(--accent); color: #fff; }
+@media (max-width: 520px) { .comp-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.slot--reserved { border-style: solid; border-color: var(--rule); background: var(--well); }
+.slot--reserved .media { border-bottom-style: solid; }
+.slot--reserved .meta { font: 400 11.5px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
