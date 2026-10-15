@@ -1,0 +1,16 @@
+# Static site: no build step. Netlify serves this folder as-is.
+[build]
+  publish = "."
+  command = ""
+
+# Keep the project notes out of the public site
+[[redirects]]
+  from = "/README.md"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/CLAUDE.md"
+  to = "/404"
+  status = 404
+  force = true

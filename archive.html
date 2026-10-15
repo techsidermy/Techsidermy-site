@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Archive · Techsidermy Lab</title>
+<meta name="description" content="Every Techsidermy specimen, numbered and recorded. Acquire available pieces and limited series.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/site.css?v=3">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body data-page="archive">
+<header data-site-head></header>
+
+<main>
+  <section class="hero" style="padding-bottom:40px">
+    <div class="wrap">
+      <span class="label label--accent">Catalogue of specimens</span>
+      <div class="row-between">
+        <h1 class="display">The Archive<span class="dot">.</span></h1>
+        <p class="lede" style="max-width:40ch">Every specimen, numbered and recorded. The drawers fill one at a time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-bottom:120px">
+    <div class="wrap">
+      <div class="archive-bar">
+        <span class="queue">Intake queue open</span>
+        <span style="display:flex; align-items:center; gap:20px; flex-wrap:wrap"><span class="count" id="archive-count"></span><a class="btn" href="submit.html#intake-start">Submit a specimen</a></span>
+      </div>
+      <div class="grid" id="archive-grid"></div>
+
+      <div class="exhibit mt-4 rv">
+        <div><span class="label label--accent">Have a device worth keeping?</span>
+          <h2 class="h2 mt-1">Become a<br>specimen<span class="dot">.</span></h2></div>
+        <div style="display:grid; gap:20px; align-content:center">
+          <p class="lede">Join the intake queue. Your device takes the next open drawer.</p>
+          <a class="btn" href="submit.html" style="justify-self:start">Join the queue</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer data-site-foot></footer>
+<script src="js/data.js?v=3"></script>
+<script src="js/site.js?v=3"></script>
+</body>
+</html>
