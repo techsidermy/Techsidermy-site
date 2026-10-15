@@ -126,11 +126,9 @@
     for (let k = 0; k < count; k++, n++) {
       const num = String(n).padStart(4, '0');
       const last = k === count - 1;
-      out += last
-        ? `<a class="slot rv" href="submit.html"><div class="media"><span class="cta">Reserve this drawer</span><span class="num">Nº ${num}</span><span class="ghost-num" aria-hidden="true">${num}</span></div>
-             <div class="body"><span class="status">Unassigned</span><span class="name">Your device</span><span class="meta">Join the intake queue →</span></div></a>`
-        : `<div class="slot rv" aria-label="Empty specimen drawer ${num}"><div class="media"><span class="num">Nº ${num}</span><span class="ghost-num" aria-hidden="true">${num}</span></div>
-             <div class="body"><span class="status">Unassigned</span><span class="name">Awaiting specimen</span><span class="meta">—</span></div></div>`;
+      out += `<a class="slot rv${last ? ' slot--cta' : ''}" href="submit.html#intake-start" aria-label="Submit a specimen for drawer ${num}">
+          <div class="media"><span class="cta">Submit a specimen</span><span class="num">Nº ${num}</span><span class="ghost-num" aria-hidden="true">${num}</span></div>
+          <div class="body"><span class="status">Unassigned</span><span class="name">${last ? 'Your device' : 'Awaiting specimen'}</span><span class="meta">Join the intake queue →</span></div></a>`;
     }
     return out;
   }

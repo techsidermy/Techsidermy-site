@@ -145,8 +145,8 @@ window.ARCHIVE_SLOTS = 5;
 
 /* Commission pricing, shown on the Submit page */
 window.COMMISSION = {
-  price: 249,
-  regular: 375,
+  price: 225,
+  regular: 300,
   founding: 'Founding rate · first 10 specimens',
   returnShipping: 'Insured return shipping billed separately',
   turnaround: '3–4 weeks from intake',

@@ -469,7 +469,7 @@ a.slot .media .cta { position: relative; z-index: 1; font: 400 11px/1 var(--f-mo
 
 /* ---------- specimen anatomy (exploded) ---------- */
 .anatomy { width: 100%; height: auto; overflow: visible; }
-.anatomy .ly { transform: translateY(calc(var(--i) * 52px)); transition: transform 1.1s var(--ease); transition-delay: calc(var(--i) * 70ms); }
+.anatomy .ly { transform: translateY(calc(var(--i) * 70px)); transition: transform 1.1s var(--ease); transition-delay: calc(var(--i) * 70ms); }
 .anatomy .lab { opacity: 0; transition: opacity .6s; transition-delay: calc(.6s + var(--i) * 90ms); }
 .rv.in .anatomy .ly, .anatomy.in .ly { transform: none; }
 .rv.in .anatomy .lab { opacity: 1; }
@@ -543,3 +543,11 @@ a.slot .media .cta { position: relative; z-index: 1; font: 400 11px/1 var(--f-mo
   .step-btn::after { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
   .sb-in { margin-left: 23px; padding-left: 40px; }
 }
+
+/* every empty drawer is a way in */
+a.slot .media .cta { opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .25s var(--ease); }
+a.slot:hover .media .cta, a.slot:focus-visible .media .cta, a.slot.slot--cta .media .cta { opacity: 1; transform: none; }
+a.slot .meta { font: 400 11.5px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); transition: color .25s; }
+a.slot:hover .meta { color: var(--accent); }
+a.slot:hover .media::before, a.slot:hover .media::after { background: var(--trace); }
+@media (hover: none) { a.slot .media .cta { opacity: 1; transform: none; } }
