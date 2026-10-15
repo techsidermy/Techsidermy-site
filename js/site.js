@@ -106,7 +106,7 @@
     const media = img
       ? `<img src="${img.src}" alt="${img.alt}" loading="lazy" class="${img.full ? 'full' : ''}">`
       : `<div class="schematic"><span class="label">Awaiting specimen</span></div>`;
-    const price = s.price ? money(s.price) : (s.kind === 'commission' ? 'Commission' : '—');
+    const price = s.price ? money(s.price) : (s.kind === 'commission' ? 'Private' : '—');
     return `
       <button class="card rv" data-i="${i}" aria-haspopup="dialog">
         <div class="media">${media}<span class="num">Nº ${s.num}</span><span class="ghost-num" aria-hidden="true">${s.num}</span></div>
@@ -135,12 +135,27 @@
 
   const grid = $('#archive-grid');
   if (grid && window.SPECIMENS) {
-    const list = visible();
-    const slots = window.ARCHIVE_SLOTS || 0;
-    grid.innerHTML = list.map(([sp, i]) => cardHTML(sp, i)).join('') + slotsHTML(slots);
-    const cnt = $('#archive-count');
-    if (cnt) cnt.textContent = `${String(list.length).padStart(2, '0')} catalogued · ${String(slots).padStart(2, '0')} drawers open`;
-    observeReveals();
+    const forSale = (sp) => !!sp.price && (sp.status === 'available' || sp.status === 'reserve');
+    const toggle = $('#avail-toggle');
+    const note = $('#avail-note');
+    const render = () => {
+      const first = toggle && toggle.getAttribute('aria-pressed') === 'true';
+      let list = visible();
+      if (first) list = list.filter(([sp]) => forSale(sp)).concat(list.filter(([sp]) => !forSale(sp)));
+      const slots = window.ARCHIVE_SLOTS || 0;
+      grid.innerHTML = list.map(([sp, i]) => cardHTML(sp, i)).join('') + slotsHTML(slots);
+      const n = list.filter(([sp]) => forSale(sp)).length;
+      if (note) note.hidden = !(first && n === 0);
+      const cnt = $('#archive-count');
+      if (cnt) cnt.textContent = `${String(list.length).padStart(2, '0')} catalogued · ${String(n).padStart(2, '0')} available`;
+      observeReveals();
+    };
+    if (toggle) toggle.addEventListener('click', () => {
+      toggle.setAttribute('aria-pressed', toggle.getAttribute('aria-pressed') !== 'true');
+      render();
+    });
+    if (toggle && location.hash === '#available') toggle.setAttribute('aria-pressed', 'true');
+    render();
     grid.addEventListener('click', (e) => {
       const card = e.target.closest('.card');
       if (card) openSpecimen(+card.dataset.i, card);

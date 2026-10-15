@@ -551,3 +551,12 @@ a.slot .meta { font: 400 11.5px/1.4 var(--f-mono); letter-spacing: .1em; text-tr
 a.slot:hover .meta { color: var(--accent); }
 a.slot:hover .media::before, a.slot:hover .media::after { background: var(--trace); }
 @media (hover: none) { a.slot .media .cta { opacity: 1; transform: none; } }
+
+/* archive legend + available toggle */
+.legend { display: flex; flex-wrap: wrap; gap: 10px 22px; }
+.bar-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.avail-note { display: grid; gap: 8px; padding: 18px 20px; margin-bottom: 28px; border: 1px solid var(--ink); background: var(--panel); position: relative; }
+.avail-note::before { content: ""; position: absolute; left: -1px; top: -1px; width: 3px; height: calc(100% + 2px); background: var(--accent); }
+.avail-note[hidden] { display: none; }
+.avail-note p { margin: 0; }
+@media (max-width: 620px) { .legend { gap: 8px 16px; } .bar-right { width: 100%; justify-content: space-between; } }

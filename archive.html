@@ -7,7 +7,7 @@
 <meta name="description" content="Every Techsidermy specimen, numbered and recorded. Acquire available pieces and limited series.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=5">
+<link rel="stylesheet" href="css/site.css?v=6">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 <body data-page="archive">
@@ -27,8 +27,20 @@
   <section style="padding-bottom:120px">
     <div class="wrap">
       <div class="archive-bar">
-        <span class="queue">Intake queue open</span>
-        <span class="count" id="archive-count"></span>
+        <div class="legend">
+          <span class="status" data-s="available">Available to acquire</span>
+          <span class="status" data-s="dissection">Commission · private</span>
+          <span class="status">Unassigned drawer</span>
+        </div>
+        <div class="bar-right">
+          <span class="count" id="archive-count"></span>
+          <button class="chip" id="avail-toggle" aria-pressed="false">Available first</button>
+        </div>
+      </div>
+      <p class="mono-sm" style="margin:-20px 0 32px; max-width:70ch">Specimens marked <span style="color:var(--accent)">available</span> can be acquired directly. Each ships framed, numbered and ready to hang.</p>
+      <div class="avail-note" id="avail-note" hidden>
+        <span class="label label--accent">Nothing available this moment</span>
+        <p class="mono-sm">New specimens are released into the Archive as they leave the bench. Follow <a href="https://instagram.com/techsidermy.lab" target="_blank" rel="noopener"><u>@techsidermy.lab</u></a> for releases, or <a href="submit.html#intake-start"><u>submit your own</u></a>.</p>
       </div>
       <div class="grid" id="archive-grid"></div>
 
@@ -45,7 +57,7 @@
 </main>
 
 <footer data-site-foot></footer>
-<script src="js/data.js?v=5"></script>
-<script src="js/site.js?v=5"></script>
+<script src="js/data.js?v=6"></script>
+<script src="js/site.js?v=6"></script>
 </body>
 </html>
