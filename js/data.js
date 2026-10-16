@@ -150,10 +150,30 @@ window.ARCHIVE_SLOTS = 4;
 
 /* Commission pricing, shown on the Submit page */
 window.COMMISSION = {
-  price: 225,
-  regular: 300,
-  founding: 'Founding rate · first 10 specimens',
-  returnShipping: 'Insured return shipping billed separately',
+  price: 175,             // "from" price shown in the strip (smallest founding rate)
+  regular: 225,
+  // Frame sizes. price = founding rate, regular = standard rate.
+  tiers: {
+    S:  { frame: '8 × 10 in',  price: 175, regular: 225 },
+    M:  { frame: '11 × 14 in', price: 250, regular: 295 },
+    L:  { frame: '16 × 20 in', price: 350, regular: 395 },
+    XL: { frame: '22 × 28 in', price: 500, regular: 595 }
+  },
+  // Suggested size per device type (keys match the form's device_type values). null = sized at intake.
+  types: {
+    'Virtual pet or pager': { tier: 'S',  hint: 'Tamagotchis, pagers, key fobs, iPod nano and shuffle.' },
+    'Phone':                { tier: 'M',  hint: 'Most phones, including flip phones.' },
+    'Handheld console':     { tier: 'M',  hint: 'Game Boy, Game Gear, PSP. Bigger handhelds may move up to L.' },
+    'Controller':           { tier: 'M',  hint: 'Most controllers fit an 11 × 14.' },
+    'Portable audio':       { tier: 'M',  hint: 'Walkman and iPod classic. A nano fits S; a Discman needs L.' },
+    'Compact camera':       { tier: 'M',  hint: 'Point-and-shoots and small mirrorless bodies.' },
+    'Film or instant camera': { tier: 'L', hint: 'SLRs, Polaroids and anything with a big lens.' },
+    'Keyboard':             { tier: 'XL', hint: 'Full keyboards need the room for both shells and every key.' },
+    'Home console':         { tier: 'XL', hint: 'NES, SNES, N64 and their kin.' },
+    'Other':                { tier: null, hint: 'Pick your best guess. We confirm the size at intake.' }
+  },
+  founding: 'Founding rates · first 10 specimens',
+  returnShipping: 'Insured return shipping, quoted when your spot opens',
   turnaround: '3–4 weeks from intake',
   queue: 'Intake queue open · spots held in order received',
   checkout: ''   // ← optional Stripe Payment Link for the 50% deposit

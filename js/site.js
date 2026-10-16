@@ -298,6 +298,12 @@
       if (v == null) return;
       el.textContent = (k === 'price' || k === 'regular') ? money(v) : v;
     });
+    const T = window.COMMISSION.tiers || {};
+    const tiersEl = $('#tiers');
+    if (tiersEl) tiersEl.innerHTML = Object.entries(T).map(([z, t]) => `
+      <div class="tier"><span class="tz">${z}</span><span class="tf">${t.frame}</span>
+        <span class="tp">${money(t.price)}<s>${money(t.regular)}</s></span></div>`).join('');
+    $$('[data-z]').forEach((el) => { const t = T[el.dataset.z]; if (t) el.textContent = `${t.frame} · ${money(t.price)}`; });
   }
 
   /* ---------- SUBMIT: multi-step intake form ---------- */
@@ -333,9 +339,50 @@
       return true;
     };
     const v = (n) => { const el = form.elements[n]; if (!el) return ''; if (el instanceof RadioNodeList) return el.value; return el.value.trim(); };
+
+    /* frame size: suggested from device type, customer can override */
+    const C = window.COMMISSION || {}, TIERS = C.tiers || {}, TYPES = C.types || {};
+    const ORDER = Object.keys(TIERS);
+    const pick = $('#size-pick'), sug = $('#size-sug'), note = $('#size-note'), sugIn = $('#suggested_size');
+    let touched = false;
+    const sizeNote = () => {
+      const s = sugIn.value, c = v('frame_size');
+      $$('.choices--size label', form).forEach((l) => l.classList.toggle('sug', !!s && l.previousElementSibling.value === s));
+      note.classList.remove('warn');
+      if (!c) { note.textContent = ''; return; }
+      if (!s || c === s) { note.textContent = 'Final size is confirmed at intake, once we see every part.'; return; }
+      if (ORDER.indexOf(c) < ORDER.indexOf(s)) {
+        note.classList.add('warn');
+        note.textContent = 'Going smaller means curating. If not every part fits, we choose the ones that tell its story best, and you approve the selection on your plate proof.';
+      } else {
+        note.textContent = 'Going bigger gives the parts more room to breathe: a gallery-style float with open space around the specimen.';
+      }
+    };
+    if (pick) {
+      $$('[name="device_type"]', form).forEach((r) => r.addEventListener('change', () => {
+        const t = TYPES[r.value] || { tier: null, hint: '' };
+        pick.hidden = false;
+        sugIn.value = t.tier || '';
+        sug.innerHTML = t.tier
+          ? `Suggested: <b>${t.tier} · ${TIERS[t.tier].frame}</b> ${t.hint ? `<br><span class="hint">${t.hint}</span>` : ''}`
+          : t.hint;
+        if (!touched) $$('[name="frame_size"]', form).forEach((z) => { z.checked = !!t.tier && z.value === t.tier; });
+        sizeNote();
+      }));
+      $$('[name="frame_size"]', form).forEach((z) => z.addEventListener('change', () => { touched = true; sizeNote(); }));
+    }
+    const sizeLine = () => {
+      const c = v('frame_size'); if (!c || !TIERS[c]) return '';
+      const s = sugIn ? sugIn.value : '';
+      return `${c} · ${TIERS[c].frame} · ${money(TIERS[c].price)}${s && s !== c ? ` (suggested ${s})` : ''}`;
+    };
+    const shipLine = () => (v('frame_size') ? 'Quoted when your spot opens' : '');
+
     function buildPreview() {
       const rows = [
         ['Device', [v('device_type'), v('model')].filter(Boolean).join(' · ')],
+        ['Frame', sizeLine()],
+        ['Return ship', shipLine()],
         ['Issued', v('year')],
         ['Condition', [v('powers_on'), v('battery')].filter(Boolean).join(' · ')],
         ['Origin', v('ship_from')],
@@ -345,7 +392,7 @@
       $('#preview').innerHTML = `
         <header><span class="label">Queue record · draft</span><span class="label label--accent">Nº pending</span></header>
         <dl>${rows.map(([k, x]) => `<dt>${k}</dt><dd>${x.replace(/</g, '&lt;')}</dd>`).join('')}</dl>
-        ${v('note') ? `<div class="pnote"><span class="label">${s.kind === 'commission' ? 'Client note' : 'Lab note'}</span><p class="note mt-1">“${v('note').replace(/</g, '&lt;')}”</p></div>` : ''}`;
+        ${v('note') ? `<div class="pnote"><span class="label">Client note</span><p class="note mt-1">“${v('note').replace(/</g, '&lt;')}”</p></div>` : ''}`;
     }
     back.addEventListener('click', () => go(Math.max(0, at - 1)));
     next.addEventListener('click', async () => {

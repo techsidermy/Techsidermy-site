@@ -7,7 +7,7 @@
 <meta name="description" content="Send us the device you can't throw away. It comes home dissected, preserved at 1:1 and framed, with your note on the plate.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=10">
+<link rel="stylesheet" href="css/site.css?v=14">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 <body data-page="submit">
@@ -28,16 +28,17 @@
   <section style="padding-bottom:24px">
     <div class="wrap">
       <div class="price-strip rv">
-        <div><span class="label" data-c="founding">Founding rate</span><div class="big mt-1" data-c="price">$225</div><s>Regularly <span data-c="regular">$300</span></s></div>
+        <div><span class="label" data-c="founding">Founding rate</span><span class="from mt-1">Beginning at</span><div class="big" data-c="price">$175</div><s>Regularly beginning at <span data-c="regular">$225</span></s></div>
         <ul>
           <li>One device, fully dissected</li>
           <li>Custom 1:1 plate</li>
-          <li>11 × 14 in white wood shadowbox</li>
+          <li>White wood shadowbox, sized to the device</li>
           <li>Your note on the plate</li>
           <li>Numbered into the Archive</li>
-          <li data-c="returnShipping">Insured return shipping billed separately</li>
+          <li data-c="returnShipping">Insured return shipping, quoted when your spot opens</li>
         </ul>
         <a class="btn" href="#intake-start">Join the queue</a>
+        <div class="tiers" id="tiers" aria-label="Frame sizes and rates"></div>
       </div>
     </div>
   </section>
@@ -104,9 +105,24 @@
                   <input type="radio" id="t2" name="device_type" value="Handheld console"><label for="t2">Handheld</label>
                   <input type="radio" id="t3" name="device_type" value="Controller"><label for="t3">Controller</label>
                   <input type="radio" id="t4" name="device_type" value="Portable audio"><label for="t4">Portable audio</label>
-                  <input type="radio" id="t5" name="device_type" value="Camera"><label for="t5">Camera</label>
+                  <input type="radio" id="t5" name="device_type" value="Compact camera"><label for="t5">Compact camera</label>
+                  <input type="radio" id="t7" name="device_type" value="Film or instant camera"><label for="t7">Film / instant camera</label>
+                  <input type="radio" id="t8" name="device_type" value="Virtual pet or pager"><label for="t8">Virtual pet / pager</label>
+                  <input type="radio" id="t9" name="device_type" value="Keyboard"><label for="t9">Keyboard</label>
+                  <input type="radio" id="t10" name="device_type" value="Home console"><label for="t10">Home console</label>
                   <input type="radio" id="t6" name="device_type" value="Other"><label for="t6">Other</label>
                 </div></div>
+              <div class="field size-pick" id="size-pick" hidden>
+                <span class="lab">Frame size</span>
+                <p class="size-sug" id="size-sug"></p>
+                <input type="hidden" name="suggested_size" id="suggested_size">
+                <div class="choices choices--size">
+                  <input type="radio" id="z1" name="frame_size" value="S" required><label for="z1"><b>S</b><span data-z="S"></span></label>
+                  <input type="radio" id="z2" name="frame_size" value="M"><label for="z2"><b>M</b><span data-z="M"></span></label>
+                  <input type="radio" id="z3" name="frame_size" value="L"><label for="z3"><b>L</b><span data-z="L"></span></label>
+                  <input type="radio" id="z4" name="frame_size" value="XL"><label for="z4"><b>XL</b><span data-z="XL"></span></label>
+                </div>
+                <span class="hint" id="size-note"></span></div>
               <div class="fields">
                 <div class="field"><label for="model">Make and model</label><input id="model" name="model" placeholder="e.g. Game Boy Color, iPod Classic" required></div>
                 <div class="field"><label for="year">Year, roughly</label><input id="year" name="year" placeholder="e.g. 1998" inputmode="numeric"></div>
@@ -192,7 +208,7 @@
         <div><span class="label">Protocols</span><h2 class="h2 mt-1">Before you ship<span class="dot">.</span></h2></div></div>
       <div class="faq rv">
         <details><summary><span class="k">P.01</span><span class="q">What devices do you accept?</span><span class="x"></span></summary>
-          <div class="a">Most handheld electronics: phones, handheld consoles, controllers, portable audio, calculators, cameras, pagers. Working or not; dead devices make perfectly good specimens. Larger pieces like home consoles are quoted separately.</div></details>
+          <div class="a">Most handheld electronics: phones, handheld consoles, controllers, portable audio, calculators, cameras, pagers. Working or not; dead devices make perfectly good specimens. Keyboards and home consoles too, in our larger frames.</div></details>
         <details><summary><span class="k">P.02</span><span class="q">What about my data?</span><span class="x"></span></summary>
           <div class="a">Please factory-reset phones and media players and turn off any activation or Find My locks before shipping. We never power on, access or recover data from submitted devices; storage chips are mounted as components, not read.</div></details>
         <details><summary><span class="k">P.03</span><span class="q">How are batteries handled?</span><span class="x"></span></summary>
@@ -203,13 +219,15 @@
           <div class="a">Queue spots open in the order received. Once your device arrives, <span data-c="turnaround">3–4 weeks from intake</span>, including a plate proof. Need it by a date? Note it in the form.</div></details>
         <details><summary><span class="k">P.06</span><span class="q">How does payment work?</span><span class="x"></span></summary>
           <div class="a">Nothing is charged to join the queue. When your spot opens, a 50% deposit reserves the bench; the balance and insured return shipping are due before it ships home.</div></details>
+        <details><summary><span class="k">P.07</span><span class="q">What does shipping cost?</span><span class="x"></span></summary>
+          <div class="a">You cover getting your device to the lab; packing instructions arrive when your spot opens. The finished piece comes home insured, double-boxed and corner-protected. Larger frames ship in larger boxes, so return shipping depends on your size and address. We quote it when we reach out to accept your submission, before anything is charged.</div></details>
       </div>
     </div>
   </section>
 </main>
 
 <footer data-site-foot></footer>
-<script src="js/data.js?v=10"></script>
-<script src="js/site.js?v=10"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/site.js?v=14"></script>
 </body>
 </html>
