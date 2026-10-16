@@ -353,7 +353,7 @@
       if (!s || c === s) { note.textContent = 'Final size is confirmed at intake, once we see every part.'; return; }
       if (ORDER.indexOf(c) < ORDER.indexOf(s)) {
         note.classList.add('warn');
-        note.textContent = 'Going smaller means curating. If not every part fits, we choose the ones that tell its story best, and you approve the selection on your plate proof.';
+        note.textContent = 'Going smaller means curating. If not every part fits, we choose the ones that tell its story best. Want to sign off on the selection? Request a plate proof in the next step.';
       } else {
         note.textContent = 'Going bigger gives the parts more room to breathe: a gallery-style float with open space around the specimen.';
       }
@@ -387,7 +387,8 @@
         ['Condition', [v('powers_on'), v('battery')].filter(Boolean).join(' · ')],
         ['Origin', v('ship_from')],
         ['From', v('name')],
-        ['For', v('recipient')]
+        ['For', v('recipient')],
+        ['Proof', form.elements.plate_proof && form.elements.plate_proof.checked ? 'Plate proof requested' : '']
       ].filter(([, x]) => x);
       $('#preview').innerHTML = `
         <header><span class="label">Queue record · draft</span><span class="label label--accent">Nº pending</span></header>

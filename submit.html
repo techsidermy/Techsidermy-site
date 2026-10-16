@@ -7,7 +7,7 @@
 <meta name="description" content="Send us the device you can't throw away. It comes home dissected, preserved at 1:1 and framed, with your note on the plate.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=14">
+<link rel="stylesheet" href="css/site.css?v=15">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 <body data-page="submit">
@@ -60,9 +60,9 @@
         <div class="step"><button class="step-btn" type="button" aria-expanded="false"><span class="node">03</span><span class="t">Ship</span><span class="d">Send it to the lab.</span>
           </button><div class="step-body"><div><div class="sb-in"><span class="label label--accent">Step 03 · Ship</span><h3 class="h3">Send it to the lab</h3>
             <p>Packing instructions and the lab address arrive by email. Factory-reset the device first.</p></div></div></div></div>
-        <div class="step"><button class="step-btn" type="button" aria-expanded="false"><span class="node">04</span><span class="t">Intake</span><span class="d">Recorded, plate proofed.</span>
-          </button><div class="step-body"><div><div class="sb-in"><span class="label label--accent">Step 04 · Intake</span><h3 class="h3">Intake and plate proof</h3>
-            <p>Measured, photographed and numbered. You approve a 1:1 plate proof.</p></div></div></div></div>
+        <div class="step"><button class="step-btn" type="button" aria-expanded="false"><span class="node">04</span><span class="t">Intake</span><span class="d">Measured, numbered.</span>
+          </button><div class="step-body"><div><div class="sb-in"><span class="label label--accent">Step 04 · Intake</span><h3 class="h3">Intake</h3>
+            <p>Measured, photographed and numbered. Asked for a plate proof? It arrives here for your approval before anything is printed.</p></div></div></div></div>
         <div class="step"><button class="step-btn" type="button" aria-expanded="false"><span class="node">05</span><span class="t">Dissect</span><span class="d">Taken apart, mounted.</span>
           </button><div class="step-body"><div><div class="sb-in"><span class="label label--accent">Step 05 · Dissection</span><h3 class="h3">Dissection and mounting</h3>
             <p>Taken apart by hand, cleaned and mounted on clear standoffs. Photos from the bench.</p></div></div></div></div>
@@ -151,6 +151,7 @@
                 <div class="field full"><label for="note">Client note (printed on your plate)</label>
                   <textarea id="note" name="note" class="note-in" maxlength="80" placeholder="Some things are better off left behind."></textarea>
                   <span class="hint">One line, up to 80 characters. Optional, but it's the part people remember.</span></div>
+                <div class="field full"><label class="check"><input type="checkbox" name="plate_proof" value="Plate proof requested"><span>Send me a plate proof to approve before it's printed. Adds a few days.</span></label></div>
                 <div class="field full"><span class="lab">Who is it for?</span>
                   <div class="choices">
                     <input type="radio" id="r1" name="recipient" value="Myself"><label for="r1">Myself</label>
@@ -216,7 +217,7 @@
         <details><summary><span class="k">P.04</span><span class="q">What if something breaks?</span><span class="x"></span></summary>
           <div class="a">Decades-old plastic and ribbon cables can be fragile. We work slowly and carefully, but if a part breaks during dissection it's preserved and mounted as-is. That's part of the specimen's record.</div></details>
         <details><summary><span class="k">P.05</span><span class="q">When will my spot open?</span><span class="x"></span></summary>
-          <div class="a">Queue spots open in the order received. Once your device arrives, <span data-c="turnaround">3–4 weeks from intake</span>, including a plate proof. Need it by a date? Note it in the form.</div></details>
+          <div class="a">Queue spots open in the order received. Once your device arrives, <span data-c="turnaround">3–4 weeks from intake</span>. A plate proof, if you request one, adds a few days. Need it by a date? Note it in the form.</div></details>
         <details><summary><span class="k">P.06</span><span class="q">How does payment work?</span><span class="x"></span></summary>
           <div class="a">Nothing is charged to join the queue. When your spot opens, a 50% deposit reserves the bench; the balance and insured return shipping are due before it ships home.</div></details>
         <details><summary><span class="k">P.07</span><span class="q">What does shipping cost?</span><span class="x"></span></summary>
@@ -227,7 +228,7 @@
 </main>
 
 <footer data-site-foot></footer>
-<script src="js/data.js?v=14"></script>
-<script src="js/site.js?v=14"></script>
+<script src="js/data.js?v=15"></script>
+<script src="js/site.js?v=15"></script>
 </body>
 </html>

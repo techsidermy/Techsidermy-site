@@ -601,3 +601,4 @@ a.slot:hover .media::before, a.slot:hover .media::after { background: var(--trac
 .slot--reserved { border-style: solid; border-color: var(--rule); background: var(--well); }
 .slot--reserved .media { border-bottom-style: solid; }
 .slot--reserved .meta { font: 400 11.5px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.field label.check { font: 400 13px/1.55 var(--f-mono); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
