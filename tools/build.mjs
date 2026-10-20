@@ -89,12 +89,14 @@ for (const s of specimens) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${img0 ? imgUrl(img0) : BASE + '/assets/img/social-card.jpg'}">
 ${img0 ? `<meta property="og:image:alt" content="${esc(img0.alt)}">\n` : ''}<meta name="twitter:card" content="summary_large_image">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/site.css?v=16">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/assets/favicon-192.png" type="image/png" sizes="192x192">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
 <body data-page="archive">
 <header data-site-head></header>
