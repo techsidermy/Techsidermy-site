@@ -65,6 +65,55 @@ create table if not exists public.specimens (
   updated_at    timestamptz not null default now()
 );
 
+-- Safe to re-run: bring an older specimens table up to date.
+alter table public.specimens add column if not exists num text;
+alter table public.specimens add column if not exists device text not null;
+alter table public.specimens add column if not exists kind text not null default 'commission';
+alter table public.specimens add column if not exists customer_name text;
+alter table public.specimens add column if not exists customer_email text;
+alter table public.specimens add column if not exists frame_size text;
+alter table public.specimens add column if not exists device_type text;
+alter table public.specimens add column if not exists device_year text;
+alter table public.specimens add column if not exists story text;
+alter table public.specimens add column if not exists photo_url text;
+alter table public.specimens add column if not exists submitted_on date default current_date;
+alter table public.specimens add column if not exists accepted_on date;
+alter table public.specimens add column if not exists stage text not null default 'submitted';
+alter table public.specimens add column if not exists price numeric(10,2);
+alter table public.specimens add column if not exists paid numeric(10,2) not null default 0;
+alter table public.specimens add column if not exists costs numeric(10,2) not null default 0;
+alter table public.specimens add column if not exists due_on date;
+alter table public.specimens add column if not exists received_on date;
+alter table public.specimens add column if not exists shipped_on date;
+alter table public.specimens add column if not exists tracking text;
+alter table public.specimens add column if not exists note text;
+alter table public.specimens add column if not exists internal text;
+alter table public.specimens add column if not exists sale_status text not null default 'not_listed';
+alter table public.specimens add column if not exists list_price numeric(10,2);
+alter table public.specimens add column if not exists sold_price numeric(10,2);
+alter table public.specimens add column if not exists sold_on date;
+alter table public.specimens add column if not exists buyer text;
+alter table public.specimens add column if not exists listed_on date;
+alter table public.specimens add column if not exists edition text;
+alter table public.specimens add column if not exists location text;
+alter table public.specimens add column if not exists checkout_url text;
+alter table public.specimens add column if not exists device_cost numeric(10,2) not null default 0;
+alter table public.specimens add column if not exists labor_hours numeric(6,2)  not null default 0;
+alter table public.specimens add column if not exists overhead_override numeric(10,2);
+alter table public.specimens add column if not exists ship_charged numeric(10,2) not null default 0;
+alter table public.specimens add column if not exists ship_cost numeric(10,2) not null default 0;
+alter table public.specimens add column if not exists created_at timestamptz not null default now();
+alter table public.specimens add column if not exists updated_at timestamptz not null default now();
+alter table public.specimens drop constraint if exists specimens_stage_check;
+update public.specimens set stage = 'submitted' where stage = 'queued';
+update public.specimens set stage = 'accepted' where stage = 'confirmed';
+alter table public.specimens add constraint specimens_stage_check check (stage in (
+  'submitted','accepted','awaiting_device','received','dissection',
+  'plate_ordered','mounting','framed','shipped','complete','declined'));
+alter table public.specimens alter column stage set default 'submitted';
+alter table public.specimens drop constraint if exists specimens_sale_status_check;
+alter table public.specimens add constraint specimens_sale_status_check check (sale_status in ('not_listed','available','reserved','sold','not_for_sale'));
+
 -- Inventory: what's on the shelf.
 create table if not exists public.inventory (
   id          uuid primary key default gen_random_uuid(),
