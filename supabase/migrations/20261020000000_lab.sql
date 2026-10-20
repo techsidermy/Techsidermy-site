@@ -18,7 +18,7 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 
 -- Specimens: one row per piece, from intake queue to shipped.
--- stage order: queued, confirmed, awaiting_device, received, dissection,
+-- stage order: submitted, accepted, awaiting_device, received, dissection,
 --              plate_ordered, mounting, framed, shipped, complete, declined
 create table if not exists public.specimens (
   id            uuid primary key default gen_random_uuid(),
@@ -28,8 +28,14 @@ create table if not exists public.specimens (
   customer_name text,
   customer_email text,
   frame_size    text,                       -- S / M / L / XL
-  stage         text not null default 'queued' check (stage in (
-                  'queued','confirmed','awaiting_device','received','dissection',
+  device_type   text,                       -- from the intake form
+  device_year   text,
+  story         text,                       -- why it matters, from the intake form
+  photo_url     text,
+  submitted_on  date default current_date,
+  accepted_on   date,
+  stage         text not null default 'submitted' check (stage in (
+                  'submitted','accepted','awaiting_device','received','dissection',
                   'plate_ordered','mounting','framed','shipped','complete','declined')),
   price         numeric(10,2),              -- agreed price
   paid          numeric(10,2) not null default 0,  -- money received so far
