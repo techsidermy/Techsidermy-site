@@ -14,3 +14,10 @@
   to = "/404"
   status = 404
   force = true
+
+# Command center: keep it out of search engines
+[[headers]]
+  for = "/lab*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"

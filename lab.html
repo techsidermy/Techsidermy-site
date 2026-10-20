@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Command Center · Techsidermy Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/site.css?v=15">
+<link rel="stylesheet" href="css/lab.css?v=1">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body data-page="lab">
+
+<header class="lab-head">
+  <div class="wrap">
+    <a href="index.html" class="wordmark" aria-label="Techsidermy Lab, public site"><b>TECHSIDERMY</b><i>LAB</i></a>
+    <span class="label">Command center</span>
+    <button class="lab-link" id="signout" type="button" hidden>Sign out</button>
+  </div>
+  <div class="head-rule"></div>
+</header>
+
+<main class="wrap lab-main">
+
+  <!-- signed out -->
+  <section id="gate" class="gate" hidden>
+    <span class="label">Restricted · lab staff only</span>
+    <h1 class="h2 mt-1">Sign in<span class="dot">.</span></h1>
+    <form id="login" class="gate-form" novalidate>
+      <label class="label" for="login-email">Email</label>
+      <input id="login-email" type="email" autocomplete="email" required placeholder="techsidermy@gmail.com">
+      <button class="btn" type="submit">Send sign-in link</button>
+      <p class="mono-sm" id="login-msg" role="status"></p>
+    </form>
+  </section>
+
+  <!-- not configured -->
+  <section id="setup" class="gate" hidden>
+    <span class="label label--accent">Setup needed</span>
+    <h1 class="h2 mt-1">Connect Supabase<span class="dot">.</span></h1>
+    <p class="mono-sm">Add your project URL and anon key to <code>js/lab-config.js</code>, then redeploy.</p>
+  </section>
+
+  <!-- signed in -->
+  <section id="app" hidden>
+    <nav class="lab-tabs" role="tablist" aria-label="Command center">
+      <button role="tab" data-tab="overview" aria-selected="true">Progress</button>
+      <button role="tab" data-tab="specimens" aria-selected="false">Specimens</button>
+      <button role="tab" data-tab="inventory" aria-selected="false">Inventory</button>
+      <button role="tab" data-tab="parts" aria-selected="false">Parts list</button>
+    </nav>
+    <p class="lab-error" id="err" role="alert" hidden></p>
+
+    <div data-panel="overview"></div>
+    <div data-panel="specimens" hidden></div>
+    <div data-panel="inventory" hidden></div>
+    <div data-panel="parts" hidden></div>
+  </section>
+</main>
+
+<!-- editor drawer -->
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <form class="drawer-in" id="drawer-form">
+    <div class="drawer-top"><span class="label" id="drawer-title">Edit</span><button type="button" class="lab-link" data-close>Close</button></div>
+    <div id="drawer-fields" class="fields"></div>
+    <div class="drawer-actions">
+      <button class="btn" type="submit">Save</button>
+      <button class="lab-link danger" type="button" id="drawer-delete" hidden>Delete</button>
+    </div>
+  </form>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/lab-config.js?v=1"></script>
+<script src="js/lab.js?v=1"></script>
+</body>
+</html>

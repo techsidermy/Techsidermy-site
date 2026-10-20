@@ -7,6 +7,7 @@ index.html      Home: premise, featured specimens, the object, commission CTA
 archive.html    The Archive (store): filterable specimen grid + detail panels
 submit.html     Submissions: pricing, 6-step process, 4-step intake form, protocols
 practice.html   The story, method, exhibition (Sedona) and series
+lab.html        Private command center (/lab), backed by Supabase
 css/site.css    The whole design system (colors, type, circuit components)
 js/data.js      ← EDIT THIS to add specimens, prices, Stripe links
 js/site.js      Shared header/footer, popups, connector traces, form logic
@@ -62,3 +63,16 @@ into `assets/img/`. The Archive, the home page and the detail panels update auto
 - Stripe Payment Links in `js/data.js`
 - Specimen Nº 0004 (Home Console) uses concept images; swap in real photos once it's built
 - Pricing lives in `window.COMMISSION` at the bottom of `js/data.js`
+
+## The command center (/lab)
+
+1. In Supabase, open **SQL Editor**, paste `supabase/migrations/20261020000000_lab.sql` and run it
+   (skip if the GitHub integration already applied it).
+2. **Authentication → Users → Add user**: create `techsidermy@gmail.com`.
+3. **Authentication → Sign In / Providers**: turn off **Allow new users to sign up**.
+4. **Authentication → URL Configuration**: set Site URL to `https://techsidermy.store` and add
+   `https://techsidermy.store/lab` as a redirect URL.
+5. Paste the project URL and anon key into `js/lab-config.js`, commit, push.
+
+Sign in at techsidermy.store/lab with the emailed link. To let another email in, add it to the
+`lab_admins` table.

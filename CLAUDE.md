@@ -23,3 +23,7 @@ All specimen/store content comes from `js/data.js`.
 
 ## Pages
 index (home) · archive (store) · submit (commission intake) · practice (story/exhibition)
+lab (private command center at /lab: specimens pipeline, inventory, parts list, progress report).
+lab data lives in Supabase (schema in `supabase/migrations/`); keys in `js/lab-config.js`. Row level
+security limits every table to emails in `lab_admins`. Never expose the specimens table to customers;
+a future customer status view should return safe columns only.
