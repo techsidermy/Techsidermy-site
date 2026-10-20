@@ -46,6 +46,21 @@ create table if not exists public.specimens (
   tracking      text,
   note          text,                       -- client's note for the plate
   internal      text,                       -- private lab notes, never shown to customers
+  -- Archive pieces (kind archive / series): sale + cost tracking
+  sale_status   text not null default 'not_listed' check (sale_status in ('not_listed','available','reserved','sold','not_for_sale')),
+  list_price    numeric(10,2),
+  sold_price    numeric(10,2),
+  sold_on       date,
+  buyer         text,
+  listed_on     date,
+  edition       text,                       -- "1 of 1"
+  location      text,                       -- studio, gallery, on loan
+  checkout_url  text,                       -- Stripe Payment Link
+  device_cost   numeric(10,2) not null default 0,  -- what the device cost you
+  labor_hours   numeric(6,2)  not null default 0,
+  overhead_override numeric(10,2),          -- leave empty to use the lab-wide overhead per piece
+  ship_charged  numeric(10,2) not null default 0,  -- shipping the buyer paid
+  ship_cost     numeric(10,2) not null default 0,  -- what shipping cost you
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -77,6 +92,17 @@ create table if not exists public.parts (
   updated_at  timestamptz not null default now()
 );
 
+-- Lab-wide cost settings (one row).
+create table if not exists public.lab_settings (
+  id                int primary key default 1 check (id = 1),
+  overhead_monthly  numeric(10,2) not null default 0,   -- rent, software, utilities, insurance…
+  pieces_per_month  numeric(6,2)  not null default 4,   -- spreads overhead across pieces
+  labor_rate        numeric(10,2) not null default 0,   -- your hourly rate, $0 to ignore labor
+  fee_pct           numeric(5,2)  not null default 2.9, -- payment processing %
+  fee_fixed         numeric(10,2) not null default 0.30 -- payment processing per sale
+);
+insert into public.lab_settings (id) values (1) on conflict do nothing;
+
 -- Running list: things to buy and notes to self.
 create table if not exists public.lab_notes (
   id          uuid primary key default gen_random_uuid(),
@@ -102,6 +128,7 @@ alter table public.specimens  enable row level security;
 alter table public.inventory  enable row level security;
 alter table public.parts      enable row level security;
 alter table public.lab_notes  enable row level security;
+alter table public.lab_settings enable row level security;
 
 drop policy if exists "lab only" on public.specimens;
 create policy "lab only" on public.specimens for all to authenticated
@@ -114,6 +141,9 @@ create policy "lab only" on public.parts for all to authenticated
   using (public.is_lab_admin()) with check (public.is_lab_admin());
 drop policy if exists "lab only" on public.lab_notes;
 create policy "lab only" on public.lab_notes for all to authenticated
+  using (public.is_lab_admin()) with check (public.is_lab_admin());
+drop policy if exists "lab only" on public.lab_settings;
+create policy "lab only" on public.lab_settings for all to authenticated
   using (public.is_lab_admin()) with check (public.is_lab_admin());
 drop policy if exists "lab reads admins" on public.lab_admins;
 create policy "lab reads admins" on public.lab_admins for select to authenticated

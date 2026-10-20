@@ -31,7 +31,7 @@
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase) { $('#setup').hidden = false; return; }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 
-  const state = { specimens: [], inventory: [], parts: [], notes: [], loaded: false };
+  const state = { specimens: [], inventory: [], parts: [], notes: [], settings: { overhead_monthly: 0, pieces_per_month: 4, labor_rate: 0, fee_pct: 2.9, fee_fixed: 0.3 }, loaded: false };
 
   /* ---------- auth: username + password ---------- */
   $('#login').addEventListener('submit', async (e) => {
@@ -68,13 +68,15 @@
     return true;
   }
   async function loadAll() {
-    const [s, i, p, n] = await Promise.all([
+    const [s, i, p, n, st] = await Promise.all([
       db.from('specimens').select('*').order('created_at', { ascending: false }),
       db.from('inventory').select('*').order('category').order('item'),
       db.from('parts').select('*').order('sort'),
-      db.from('lab_notes').select('*').order('created_at', { ascending: false })
+      db.from('lab_notes').select('*').order('created_at', { ascending: false }),
+      db.from('lab_settings').select('*').eq('id', 1).single()
     ]);
     if (fail(s.error || i.error || p.error || n.error)) return;
+    if (st.data) state.settings = st.data;
     state.specimens = s.data; state.inventory = i.data; state.parts = p.data; state.notes = n.data; state.loaded = true;
     render();
   }
@@ -88,15 +90,39 @@
   const dated = () => onBench().filter((x) => x.due_on).sort((a, b) => a.due_on.localeCompare(b.due_on));
   const dueWeek = () => dated().filter((x) => daysFrom(x.due_on) <= 7);
   const live = () => state.specimens.filter((x) => !['submitted', 'declined'].includes(x.stage));
+  const isArchive = (x) => x.kind === 'archive' || x.kind === 'series';
   function books() {
     const L = live();
-    const booked = L.reduce((a, x) => a + Number(x.price || 0), 0);
-    const received = L.reduce((a, x) => a + Number(x.paid || 0), 0);
-    const pieceCosts = L.reduce((a, x) => a + Number(x.costs || 0), 0);
+    const C = L.filter((x) => !isArchive(x)), A = state.specimens.filter(isArchive);
+    const sales = A.filter((x) => x.sale_status === 'sold').reduce((a, x) => a + Number(x.sold_price || 0) + Number(x.ship_charged || 0), 0);
+    const booked = C.reduce((a, x) => a + Number(x.price || 0), 0) + sales;
+    const received = C.reduce((a, x) => a + Number(x.paid || 0), 0) + sales;
+    const pieceCosts = L.reduce((a, x) => a + Number(x.costs || 0), 0)
+      + A.reduce((a, x) => a + Number(x.device_cost || 0) + Number(x.ship_cost || 0), 0);
     const supplies = state.parts.filter((x) => x.bought).reduce((a, x) => a + Number(x.price || 0), 0);
     const spent = supplies + pieceCosts;
     return { booked, received, outstanding: booked - received, pieceCosts, supplies, spent, net: received - spent };
   }
+  /* per-item economics for archive pieces */
+  const perPieceOverhead = () => { const st = state.settings; return Number(st.pieces_per_month) > 0 ? Number(st.overhead_monthly || 0) / Number(st.pieces_per_month) : 0; };
+  function econ(x) {
+    const st = state.settings;
+    const price = x.sale_status === 'sold' && x.sold_price != null ? Number(x.sold_price) : Number(x.list_price || 0);
+    const shipIn = Number(x.ship_charged || 0);
+    const fees = price ? (price + shipIn) * Number(st.fee_pct || 0) / 100 + Number(st.fee_fixed || 0) : 0;
+    const device = Number(x.device_cost || 0), materials = Number(x.costs || 0), shipOut = Number(x.ship_cost || 0);
+    const labor = Number(x.labor_hours || 0) * Number(st.labor_rate || 0);
+    const overhead = x.overhead_override != null && x.overhead_override !== '' ? Number(x.overhead_override) : perPieceOverhead();
+    const cost = device + materials + labor + overhead + shipOut + fees;
+    const revenue = price + shipIn;
+    const profit = revenue - cost;
+    return { price, revenue, fees, device, materials, labor, overhead, shipOut, cost, profit, pct: revenue ? profit / revenue * 100 : null,
+             breakeven: (device + materials + labor + overhead + shipOut - shipIn + Number(st.fee_fixed || 0)) / (1 - Number(st.fee_pct || 0) / 100) };
+  }
+  const SALE = [['not_listed', 'Not listed'], ['available', 'Available'], ['reserved', 'Reserved'], ['sold', 'Sold'], ['not_for_sale', 'Not for sale']];
+  const SALE_LABEL = Object.fromEntries(SALE);
+  const archive = () => state.specimens.filter(isArchive);
+
   function nextNum() {
     const nums = state.specimens.map((x) => parseInt(x.num, 10)).filter((n) => !isNaN(n));
     return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0');
@@ -108,6 +134,7 @@
     ['submissions', 'Submissions', () => submissions().length, 'to review'],
     ['bench',       'Bench',       () => onBench().length, 'in progress'],
     ['due',         'Due',         () => dueWeek().length, 'this week'],
+    ['archive',     'Archive',     () => archive().filter((x) => x.sale_status === 'available').length, 'for sale'],
     ['inventory',   'Inventory',   () => lowStock().length, 'low'],
     ['books',       'Books',       () => money(books().outstanding), 'owed'],
     ['parts',       'Parts',       () => `${state.parts.filter((x) => x.bought).length}/${state.parts.length}`, 'bought']
@@ -130,7 +157,7 @@
     if (!state.loaded) return;
     nav();
     const page = route();
-    ({ overview: () => { overview(); bindJot(); }, submissions: pageSubmissions, bench: pageBench, due: pageDue, inventory: pageInventory, books: pageBooks, parts: pageParts })[page]();
+    ({ overview: () => { overview(); bindJot(); }, submissions: pageSubmissions, bench: pageBench, due: pageDue, archive: pageArchive, inventory: pageInventory, books: pageBooks, parts: pageParts })[page]();
     bindCommon();
   }
   const head = (eyebrow, title, right = '') => `<div class="block-head">
@@ -343,6 +370,78 @@
         : '<p class="empty">Nothing on the bench yet.</p>'}`;
   }
 
+  /* ---------- ARCHIVE: your own pieces, for sale ---------- */
+  let saleFilter = 'all';
+  function pageArchive() {
+    const A = archive(), st = state.settings;
+    const pick = (k) => A.filter((x) => x.sale_status === k);
+    const avail = pick('available'), sold = pick('sold'), reserved = pick('reserved');
+    const listValue = avail.concat(reserved).reduce((a, x) => a + Number(x.list_price || 0), 0);
+    const soldRev = sold.reduce((a, x) => a + econ(x).revenue, 0), soldProfit = sold.reduce((a, x) => a + econ(x).profit, 0);
+    const priced = A.filter((x) => econ(x).revenue > 0);
+    const avgPct = priced.length ? priced.reduce((a, x) => a + econ(x).pct, 0) / priced.length : null;
+    const rows = A.filter((x) => saleFilter === 'all' || x.sale_status === saleFilter)
+      .sort((a, b) => (a.num || '9999').localeCompare(b.num || '9999'));
+    const chips = [['all', 'All'], ...SALE];
+
+    $('#view').innerHTML = `
+      ${head('Your pieces', 'Archive', '<button class="lab-link" type="button" id="new-arch">+ Add a piece</button>')}
+
+      <section class="ov-money arch-money" aria-label="Archive totals">
+        <div><span class="label">For sale</span><b>${avail.length}</b><span class="sub">${money(listValue)} listed${reserved.length ? ` · ${reserved.length} reserved` : ''}</span></div>
+        <div><span class="label">Sold</span><b>${sold.length}</b><span class="sub">${money(soldRev)} revenue</span></div>
+        <div><span class="label">Profit on sold</span><b class="${soldProfit < 0 ? 'neg' : ''}">${money(soldProfit)}</b><span class="sub">after costs, fees, overhead</span></div>
+        <div><span class="label">Avg margin</span><b>${avgPct == null ? '—' : Math.round(avgPct) + '%'}</b><span class="sub">across priced pieces</span></div>
+      </section>
+
+      <div class="chips">${chips.map(([k, l]) => `<button type="button" data-sale-filter="${k}" aria-pressed="${k === saleFilter}">${l} ${k === 'all' ? A.length : pick(k).length}</button>`).join('')}</div>
+
+      ${rows.length ? `<div class="table-wrap"><table class="ledger arch">
+        <thead><tr><th>Piece</th><th>Status</th><th>Made</th><th class="r">Price</th><th class="r">All-in cost</th><th class="r">Profit</th><th class="r">Margin</th></tr></thead>
+        <tbody>${rows.map((x) => { const e = econ(x);
+          return `<tr data-edit="${x.id}">
+            <td><b>${x.num ? 'Nº ' + esc(x.num) + ' · ' : ''}${esc(x.device)}</b><span class="sub">${[x.kind === 'series' ? 'Series' : 'Archive', x.edition, x.location].filter(Boolean).map(esc).join(' · ')}</span></td>
+            <td><span class="tag sale-${x.sale_status}">${SALE_LABEL[x.sale_status] || '—'}</span>${x.sale_status === 'sold' && x.sold_on ? `<span class="sub">${fmtDate(x.sold_on)}</span>` : ''}</td>
+            <td><span class="sub" style="margin:0">${LABEL[x.stage]}</span></td>
+            <td class="r">${e.price ? money(e.price, true) : '<span class="sub" style="margin:0">set price</span>'}${e.price && x.sale_status !== 'sold' ? '' : ''}</td>
+            <td class="r">${money(e.cost, true)}</td>
+            <td class="r ${e.price ? (e.profit < 0 ? 'owed' : '') : ''}">${e.price ? money(e.profit, true) : '—'}</td>
+            <td class="r">${e.pct == null ? '—' : `<span class="pct ${e.pct < 0 ? 'neg' : e.pct < 30 ? 'thin' : ''}">${Math.round(e.pct)}%</span>`}</td>
+          </tr>`; }).join('')}</tbody></table></div>`
+        : `<p class="empty">${A.length ? 'Nothing with this status.' : 'No archive pieces yet. Add your own projects here to track pricing and margin.'}</p>`}
+
+      <details class="drawer-sec cost-settings"${openCost ? ' open' : ''}>
+        <summary><span class="label">Cost settings</span><span class="sec-note">${money(perPieceOverhead(), true)} overhead per piece · ${money(st.labor_rate)}/hr labor · ${Number(st.fee_pct)}% + ${money(st.fee_fixed, true)} fees</span></summary>
+        <form class="sec-body settings-form" id="settings-form">
+          <div class="fields">
+            <label class="field"><span class="label">Monthly overhead</span><input id="st-overhead" type="number" step="0.01" inputmode="decimal" value="${esc(st.overhead_monthly)}"><span class="sub">Rent, software, insurance, tools wear: anything you pay to keep the lab running.</span></label>
+            <label class="field"><span class="label">Pieces per month</span><input id="st-pieces" type="number" step="0.5" inputmode="decimal" value="${esc(st.pieces_per_month)}"><span class="sub">Spreads overhead across what you make. Overhead per piece: <b id="st-per">${money(perPieceOverhead(), true)}</b></span></label>
+            <label class="field"><span class="label">Your hourly rate</span><input id="st-rate" type="number" step="0.01" inputmode="decimal" value="${esc(st.labor_rate)}"><span class="sub">Set to 0 to leave your time out of the margin.</span></label>
+            <label class="field"><span class="label">Payment fee %</span><input id="st-fee" type="number" step="0.01" inputmode="decimal" value="${esc(st.fee_pct)}"><span class="sub">Stripe’s standard US card rate is 2.9% + 30¢.</span></label>
+            <label class="field"><span class="label">Payment fee per sale</span><input id="st-fixed" type="number" step="0.01" inputmode="decimal" value="${esc(st.fee_fixed)}"></label>
+          </div>
+          <button class="btn btn--sm" type="submit">Save settings</button>
+        </form>
+      </details>`;
+
+    $('#new-arch').addEventListener('click', () => edit(null, { kind: 'archive', stage: 'received', sale_status: 'not_listed', edition: '1 of 1', num: nextNum() }));
+    $$('[data-sale-filter]').forEach((b) => b.addEventListener('click', () => { saleFilter = b.dataset.saleFilter; pageArchive(); bindCommon(); }));
+    $$('.arch [data-edit]').forEach((tr) => tr.addEventListener('click', () => edit(tr.dataset.edit)));
+    const det = $('.cost-settings');
+    det.addEventListener('toggle', () => { openCost = det.open; });
+    const per = () => { const o = Number($('#st-overhead').value || 0), n = Number($('#st-pieces').value || 0); $('#st-per').textContent = money(n > 0 ? o / n : 0, true); };
+    $('#st-overhead').addEventListener('input', per); $('#st-pieces').addEventListener('input', per);
+    $('#settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const patch = { id: 1, overhead_monthly: Number($('#st-overhead').value || 0), pieces_per_month: Number($('#st-pieces').value || 0),
+        labor_rate: Number($('#st-rate').value || 0), fee_pct: Number($('#st-fee').value || 0), fee_fixed: Number($('#st-fixed').value || 0) };
+      const { data, error } = await db.from('lab_settings').upsert(patch).select().single();
+      if (fail(error)) return;
+      state.settings = data; render();
+    });
+  }
+  let openCost = false;
+
   /* ---------- INVENTORY ---------- */
   function pageInventory() {
     const I = state.inventory, cats = [...new Set(I.map((x) => x.category))];
@@ -430,9 +529,48 @@
     ['story', 'Their story', 'textarea'], ['note', 'Note for the plate', 'textarea'],
     ['photo_url', 'Photo link', 'url'], ['internal', 'Lab notes (private)', 'textarea']
   ];
+  const ARCH_FIELDS = [
+    ['device', 'Piece / device', 'text', { required: true, ph: 'Olympus PEN E-PL1' }],
+    ['num', 'Archive Nº', 'text'],
+    ['kind', 'Kind', 'select', { options: [['archive', 'Archive piece'], ['series', 'Series'], ['commission', 'Commission']] }],
+    ['stage', 'Production stage', 'select', { options: STAGES }],
+    ['sale_status', 'Sale status', 'select', { options: SALE }],
+    ['edition', 'Edition', 'text', { ph: '1 of 1' }],
+    ['list_price', 'List price', 'number'], ['sold_price', 'Sold for', 'number'],
+    ['device_cost', 'Device cost', 'number'], ['costs', 'Materials', 'number'],
+    ['labor_hours', 'Hours of work', 'number'], ['overhead_override', 'Overhead (blank = lab rate)', 'number'],
+    ['ship_charged', 'Shipping charged', 'number'], ['ship_cost', 'Shipping cost', 'number'],
+    ['listed_on', 'Listed', 'date'], ['sold_on', 'Sold', 'date'],
+    ['buyer', 'Buyer', 'text'], ['location', 'Where it is', 'text', { ph: 'Studio, gallery, on loan' }],
+    ['checkout_url', 'Stripe Payment Link', 'url'], ['tracking', 'Tracking Nº', 'text'],
+    ['internal', 'Lab notes (private)', 'textarea']
+  ];
   function edit(id, defaults) {
     const x = byId(id) || { kind: 'commission', paid: 0, costs: 0, ...defaults };
-    drawer(id ? (x.num ? 'Nº ' + x.num + ' · ' : '') + x.device : 'Log a submission', SPEC_FIELDS, x, 'specimens', id);
+    const title = id ? (x.num ? 'Nº ' + x.num + ' · ' : '') + x.device : (isArchive(x) ? 'Add a piece' : 'Log a submission');
+    drawer(title, isArchive(x) ? ARCH_FIELDS : SPEC_FIELDS, x, 'specimens', id);
+    if (isArchive(x)) mountBreakdown(x);
+  }
+  function mountBreakdown(rec) {
+    const box = document.createElement('div');
+    box.className = 'breakdown full';
+    $('#drawer-fields').prepend(box);
+    const num = (k) => { const el = $('#f-' + k); return el ? (el.value === '' ? null : Number(el.value)) : rec[k]; };
+    const draw = () => {
+      const x = { ...rec, sale_status: $('#f-sale_status').value, list_price: num('list_price'), sold_price: num('sold_price'), device_cost: num('device_cost'),
+        costs: num('costs'), labor_hours: num('labor_hours'), overhead_override: num('overhead_override'), ship_charged: num('ship_charged'), ship_cost: num('ship_cost') };
+      const e = econ(x);
+      const line = (l, v, cls = '') => `<div class="bd-row ${cls}"><span>${l}</span><span>${v}</span></div>`;
+      box.innerHTML = `<span class="label">${x.sale_status === 'sold' ? 'Sold' : 'If sold at list'}</span>
+        ${line('Price' + (e.revenue !== e.price ? ' + shipping' : ''), money(e.revenue, true))}
+        ${line('Device', '− ' + money(e.device, true))}${line('Materials', '− ' + money(e.materials, true))}
+        ${e.labor ? line('Labor', '− ' + money(e.labor, true)) : ''}${line('Overhead', '− ' + money(e.overhead, true))}
+        ${e.shipOut ? line('Shipping', '− ' + money(e.shipOut, true)) : ''}${line('Payment fees', '− ' + money(e.fees, true))}
+        ${line('Profit', e.revenue ? money(e.profit, true) + (e.pct != null ? ` · ${Math.round(e.pct)}%` : '') : '—', 'total' + (e.profit < 0 && e.revenue ? ' neg' : ''))}
+        <span class="sub">Break-even price: ${money(Math.max(0, e.breakeven), true)}</span>`;
+    };
+    $$('#drawer-fields input, #drawer-fields select').forEach((el) => el.addEventListener('input', draw));
+    draw();
   }
   const INV_FIELDS = [
     ['item', 'Item', 'text', { required: true, ph: '3mm acrylic rod' }],
@@ -457,6 +595,7 @@
 
   /* ---------- shared: save, drawer, two-tap ---------- */
   const KEY = { lab_notes: 'notes' };
+  const ZERO = ['paid', 'costs', 'qty', 'device_cost', 'labor_hours', 'ship_charged', 'ship_cost'];
   async function save(table, id, patch) {
     const q = id ? db.from(table).update(patch).eq('id', id).select().single()
                  : db.from(table).insert(patch).select().single();
@@ -507,9 +646,11 @@
     current.fields.forEach(([k, , type]) => {
       const el = $('#f-' + k);
       if (type === 'checkbox') patch[k] = el.checked;
-      else if (type === 'number') patch[k] = el.value === '' ? (['paid', 'costs', 'qty'].includes(k) ? 0 : null) : Number(el.value);
+      else if (type === 'number') patch[k] = el.value === '' ? (ZERO.includes(k) ? 0 : null) : Number(el.value);
       else patch[k] = el.value.trim() === '' ? null : el.value.trim();
     });
+    if (patch.sale_status === 'sold' && !patch.sold_on) patch.sold_on = today();
+    if (patch.sale_status === 'available' && !patch.listed_on) patch.listed_on = today();
     if (await save(current.table, current.id, patch)) close();
   });
   twoTap($('#drawer-delete'), 'Tap again to delete', async () => {
