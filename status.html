@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specimen status · Techsidermy Lab</title>
+<meta name="description" content="Sign in to follow your specimen through the lab, from intake to your wall, and ask the bench a question.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<link rel="stylesheet" href="css/site.css?v=16">
+<link rel="stylesheet" href="css/status.css?v=1">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+</head>
+<body data-page="status">
+<header data-site-head></header>
+
+<main>
+  <section class="hero" style="padding-bottom:40px">
+    <div class="wrap">
+      <span class="label label--accent">Specimen status</span>
+      <h1 class="display">Follow it<br>through the lab<span class="dot">.</span></h1>
+    </div>
+  </section>
+
+  <section class="section st-section">
+    <div class="wrap">
+
+      <!-- signed out -->
+      <div id="st-gate" class="st-gate" hidden>
+        <div class="sec-head"><span class="sec-num">§ 01</span>
+          <div><span class="label">Sign in</span><h2 class="h2 mt-1">Your specimens<span class="dot">.</span></h2></div></div>
+        <div class="st-gate-grid">
+          <form id="st-login" class="st-login" novalidate>
+            <label class="label" for="st-email">The email you submitted with</label>
+            <input id="st-email" type="email" autocomplete="email" required placeholder="you@example.com">
+            <button class="btn" type="submit">Email me a sign-in link</button>
+            <p class="mono-sm" id="st-msg" role="status"></p>
+          </form>
+          <ul class="st-points">
+            <li>See every stage as it happens, from intake to your wall.</li>
+            <li>Ask a question and get the answer straight from the bench.</li>
+            <li>Tracking appears here the day it ships.</li>
+            <li>No password. We email you a one-time link.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- not configured yet -->
+      <div id="st-setup" class="st-gate" hidden>
+        <span class="label label--accent">Status tracking is almost ready</span>
+        <p class="lede mt-1">Questions in the meantime? Email <span class="mono">techsidermy@gmail.com</span>.</p>
+      </div>
+
+      <!-- signed in -->
+      <div id="st-app" hidden>
+        <div class="st-bar"><span class="label" id="st-who"></span><button class="lab-link" type="button" id="st-out">Sign out</button></div>
+        <p class="st-err" id="st-err" role="alert" hidden></p>
+        <div id="st-list" class="st-list"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer data-site-foot></footer>
+<script src="js/data.js?v=16"></script>
+<script src="js/site.js?v=16"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/lab-config.js?v=2"></script>
+<script src="js/status.js?v=1"></script>
+</body>
+</html>

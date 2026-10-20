@@ -11,7 +11,8 @@
     ['index.html', 'Index', 'home'],
     ['archive.html', 'Archive', 'archive'],
     ['submit.html', 'Submit', 'submit'],
-    ['practice.html', 'Practice', 'practice']
+    ['practice.html', 'Practice', 'practice'],
+    ['status.html', 'Status', 'status']
   ];
   const head = $('[data-site-head]');
   if (head) {
@@ -42,7 +43,7 @@
             <p class="mt-2">Specimens of obsolete technology.<br>Dissected, catalogued and preserved by hand in Sedona, Arizona.</p>
           </div>
           <div><h4>Collection</h4><a href="archive.html">The Archive</a><a href="submit.html#intake-start">Intake queue</a><a href="practice.html#exhibition">Exhibition</a></div>
-          <div><h4>Submissions</h4><a href="submit.html">Submit a specimen</a><a href="submit.html#process">The process</a><a href="submit.html#protocols">Protocols</a></div>
+          <div><h4>Submissions</h4><a href="submit.html">Submit a specimen</a><a href="submit.html#process">The process</a><a href="status.html">Track your specimen</a><a href="submit.html#protocols">Protocols</a></div>
           <div><h4>Contact</h4><a href="https://instagram.com/techsidermy.lab" target="_blank" rel="noopener">@techsidermy.lab</a><a href="mailto:techsidermy@gmail.com">techsidermy@gmail.com</a><p>Sedona, Arizona</p></div>
         </div>
         <div class="foot-base"><span class="label">© ${new Date().getFullYear()} Techsidermy Lab</span><span class="label">Specimens of obsolete technology</span></div>

@@ -26,4 +26,5 @@ index (home) · archive (store) · submit (commission intake) · practice (story
 lab (private command center at /lab: specimens pipeline, inventory, parts list, progress report).
 lab data lives in Supabase (schema in `supabase/migrations/`); keys in `js/lab-config.js`. Row level
 security limits every table to emails in `lab_admins`. Never expose the specimens table to customers;
-a future customer status view should return safe columns only.
+customers use status (/status): emailed sign-in link, data only through `my_specimens()` (safe columns)
+and `specimen_messages` RLS. Never add internal notes, costs or margin to what customers can read.

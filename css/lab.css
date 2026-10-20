@@ -325,3 +325,17 @@
 .pay { display: flex; align-items: center; gap: 10px; text-align: left; padding: 11px 16px; font: 400 11px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
 .pay-pad { width: 7px; height: 7px; background: var(--accent); flex: none; }
 .pay:hover { background: var(--paper); }
+
+/* client messages */
+.msg-badge { display: inline-block; margin-left: 6px; font: 400 10px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+.thread { display: grid; gap: 10px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--rule); }
+.thread-head { display: grid; gap: 4px; }
+.thread-msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 280px; overflow-y: auto; }
+.thread-msgs li { max-width: 90%; padding: 9px 11px; border: 1px solid var(--rule); background: var(--paper); }
+.thread-msgs li.client { justify-self: start; border-left: 2px solid var(--accent); }
+.thread-msgs li.lab { justify-self: end; }
+.thread-msgs .who { display: block; font: 400 10px/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.thread-msgs p { margin: 0; font: 400 13px/1.5 var(--f-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.thread-reply { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.thread-reply textarea { width: 100%; min-height: 60px; font: 400 13px/1.45 var(--f-mono); background: var(--paper); border: 1px solid var(--rule); border-radius: 0; padding: 9px 10px; resize: vertical; }
+.thread-reply textarea:focus { border-color: var(--ink); outline: none; }

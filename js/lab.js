@@ -31,7 +31,7 @@
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase) { $('#setup').hidden = false; return; }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 
-  const state = { specimens: [], inventory: [], parts: [], notes: [], settings: { overhead_monthly: 0, pieces_per_month: 4, labor_rate: 0, fee_pct: 2.9, fee_fixed: 0.3 }, loaded: false };
+  const state = { specimens: [], inventory: [], parts: [], notes: [], messages: [], settings: { overhead_monthly: 0, pieces_per_month: 4, labor_rate: 0, fee_pct: 2.9, fee_fixed: 0.3 }, loaded: false };
 
   /* ---------- auth: username + password ---------- */
   $('#login').addEventListener('submit', async (e) => {
@@ -68,15 +68,17 @@
     return true;
   }
   async function loadAll() {
-    const [s, i, p, n, st] = await Promise.all([
+    const [s, i, p, n, st, m] = await Promise.all([
       db.from('specimens').select('*').order('created_at', { ascending: false }),
       db.from('inventory').select('*').order('category').order('item'),
       db.from('parts').select('*').order('sort'),
       db.from('lab_notes').select('*').order('created_at', { ascending: false }),
-      db.from('lab_settings').select('*').eq('id', 1).single()
+      db.from('lab_settings').select('*').eq('id', 1).single(),
+      db.from('specimen_messages').select('*').order('created_at')
     ]);
     if (fail(s.error || i.error || p.error || n.error)) return;
     if (st.data) state.settings = st.data;
+    if (m.data) state.messages = m.data;
     state.specimens = s.data; state.inventory = i.data; state.parts = p.data; state.notes = n.data; state.loaded = true;
     render();
   }
@@ -90,6 +92,10 @@
   const dated = () => onBench().filter((x) => x.due_on).sort((a, b) => a.due_on.localeCompare(b.due_on));
   const dueWeek = () => dated().filter((x) => daysFrom(x.due_on) <= 7);
   const live = () => state.specimens.filter((x) => !['submitted', 'declined'].includes(x.stage));
+  /* client messages from the status portal */
+  const unreadFor = (id) => state.messages.filter((m) => m.specimen_id === id && m.author === 'client' && !m.seen);
+  const unreadSpecimens = () => state.specimens.filter((x) => unreadFor(x.id).length);
+
   /* payment model: one payment, in full, when a submission is accepted */
   const owedOn = (x) => Math.max(0, Number(x.price || 0) - Number(x.paid || 0));
   const isPaid = (x) => x.price != null && Number(x.price) > 0 && owedOn(x) === 0;
@@ -270,6 +276,8 @@
 
   function todayList() {
     const out = [];
+    unreadSpecimens().forEach((x) => { const n = unreadFor(x.id).length;
+      out.push({ text: `Reply to ${esc(x.customer_name || 'client')} about ${esc(x.device)}`, sub: `${plural(n, 'new message')}`, href: '#bench', edit: x.id, hot: true }); });
     const Q = submissions();
     if (Q.length) out.push({ text: `Review ${plural(Q.length, 'submission')}`, sub: `oldest ${ago(Q[0].submitted_on || Q[0].created_at)}`, href: '#submissions', hot: true });
     dated().forEach((x) => {
@@ -345,7 +353,7 @@
       <button type="button" class="spec-open" data-edit="${x.id}">
         <span class="spec-top"><span class="label">${x.num ? 'Nº ' + esc(x.num) : 'No number'}</span>${dueTxt ? `<span class="due${due <= 3 ? ' soon' : ''}">${dueTxt}</span>` : ''}</span>
         <span class="spec-name">${esc(x.device)}</span>
-        <span class="spec-meta">${esc(x.customer_name || (x.kind === 'archive' ? 'Archive piece' : x.kind === 'series' ? 'Series piece' : ''))}</span>
+        <span class="spec-meta">${esc(x.customer_name || (x.kind === 'archive' ? 'Archive piece' : x.kind === 'series' ? 'Series piece' : ''))}${unreadFor(x.id).length ? ` <span class="msg-badge">${plural(unreadFor(x.id).length, 'new message')}</span>` : ''}</span>
         <span class="track" aria-label="Step ${step + 1} of ${BENCH.length}">${BENCH.map((_, i) => `<i class="${i < step ? 'past' : i === step ? 'now' : ''}"></i>`).join('')}</span>
       </button>
       <div class="card-actions">
@@ -557,6 +565,35 @@
     const title = id ? (x.num ? 'Nº ' + x.num + ' · ' : '') + x.device : (isArchive(x) ? 'Add a piece' : 'Log a submission');
     drawer(title, isArchive(x) ? ARCH_FIELDS : SPEC_FIELDS, x, 'specimens', id);
     if (isArchive(x)) mountBreakdown(x);
+    else if (id && x.customer_email) mountThread(x);
+  }
+  function mountThread(x) {
+    const box = document.createElement('section');
+    box.className = 'thread full';
+    $('#drawer-fields').prepend(box);
+    const draw = () => {
+      const msgs = state.messages.filter((m) => m.specimen_id === x.id);
+      box.innerHTML = `<div class="thread-head"><span class="label">Messages with ${esc(x.customer_name || x.customer_email)}</span><span class="sub" style="margin:0">They see the stage, dates, payment and tracking</span></div>
+        ${msgs.length ? `<ol class="thread-msgs">${msgs.map((m) => `<li class="${m.author}"><span class="who">${m.author === 'lab' ? 'You' : esc(x.customer_name || 'Client')} · ${new Date(m.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span><p>${esc(m.body)}</p></li>`).join('')}</ol>`
+          : '<p class="sub" style="margin:0">No messages yet.</p>'}
+        <div class="thread-reply"><textarea id="reply-body" rows="2" placeholder="Reply from the bench…" aria-label="Reply"></textarea><button type="button" class="btn btn--sm" id="reply-send">Reply</button></div>`;
+      $('#reply-send', box).addEventListener('click', async () => {
+        const body = $('#reply-body', box).value.trim();
+        if (!body) return;
+        const { data, error } = await db.from('specimen_messages').insert({ specimen_id: x.id, author: 'lab', body }).select().single();
+        if (fail(error)) return;
+        state.messages.push(data); draw(); nav();
+      });
+    };
+    draw();
+    const unseen = unreadFor(x.id).map((m) => m.id);
+    if (unseen.length) {
+      db.from('specimen_messages').update({ seen: true }).in('id', unseen).then(({ error }) => {
+        if (error) return;
+        state.messages.forEach((m) => { if (unseen.includes(m.id)) m.seen = true; });
+        nav();
+      });
+    }
   }
   function mountBreakdown(rec) {
     const box = document.createElement('div');
@@ -601,7 +638,7 @@
   }
 
   /* ---------- shared: save, drawer, two-tap ---------- */
-  const KEY = { lab_notes: 'notes' };
+  const KEY = { lab_notes: 'notes', specimen_messages: 'messages' };
   const ZERO = ['paid', 'costs', 'qty', 'device_cost', 'labor_hours', 'ship_charged', 'ship_cost'];
   async function save(table, id, patch) {
     const q = id ? db.from(table).update(patch).eq('id', id).select().single()
@@ -641,7 +678,7 @@
     dr.classList.add('open'); dr.setAttribute('aria-hidden', 'false');
     setTimeout(() => $('#drawer-fields input, #drawer-fields select')?.focus(), 50);
   }
-  function close() { dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); current = null; }
+  function close() { dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); current = null; render(); }
   $('[data-close]', dr).addEventListener('click', close);
   dr.addEventListener('click', (e) => { if (e.target === dr) close(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && current) close(); });

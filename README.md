@@ -64,15 +64,18 @@ into `assets/img/`. The Archive, the home page and the detail panels update auto
 - Specimen Nº 0004 (Home Console) uses concept images; swap in real photos once it's built
 - Pricing lives in `window.COMMISSION` at the bottom of `js/data.js`
 
-## The command center (/lab)
+## The command center (/lab) and customer status (/status)
 
 1. In Supabase, open **SQL Editor**, paste `supabase/migrations/20261020000000_lab.sql` and run it
    (skip if the GitHub integration already applied it).
-2. **Authentication → Users → Add user**: create `techsidermy@gmail.com`.
-3. **Authentication → Sign In / Providers**: turn off **Allow new users to sign up**.
-4. **Authentication → URL Configuration**: set Site URL to `https://techsidermy.store` and add
-   `https://techsidermy.store/lab` as a redirect URL.
+2. **Authentication → Users → Add user → Create new user**: `techsidermy@gmail.com` with your own
+   password, and tick *Auto confirm*. Sign in at /lab with username `chase` and that password.
+3. **Authentication → Sign In / Providers**: leave **Allow new users to sign up** ON and **Email**
+   enabled. Clients sign in at /status with an emailed one-time link; the database only shows each
+   of them the specimens filed under their own email, and only you (the `lab_admins` list) reach /lab data.
+4. **Authentication → URL Configuration**: Site URL `https://techsidermy.store`; add redirect URLs
+   `https://techsidermy.store/lab` and `https://techsidermy.store/status`.
 5. Paste the project URL and anon key into `js/lab-config.js`, commit, push.
 
-Sign in at techsidermy.store/lab with the emailed link. To let another email in, add it to the
-`lab_admins` table.
+For a client to see their piece, the specimen's **Client email** in the command center must match the
+email they sign in with. Their messages show up in *Needs you today* and on the specimen's editor.

@@ -171,7 +171,53 @@ select * from (values
 ) as v(section,item,pick,price,per_piece,url,sort)
 where not exists (select 1 from public.parts);
 
--- LATER: customer status. Add a view that exposes only safe columns
--- (num, device, stage, shipped_on, tracking) filtered to
--- lower(customer_email) = lower(auth.jwt() ->> 'email'), and grant select on it.
--- Never expose the specimens table itself (it holds internal notes and money).
+-- ==========================================================================
+-- CUSTOMER PORTAL (/status)
+-- Clients sign in with an emailed link. They never touch the specimens table:
+-- my_specimens() returns only safe columns for rows matching their email,
+-- and they can read and add messages only on their own specimens.
+-- ==========================================================================
+
+create table if not exists public.specimen_messages (
+  id           uuid primary key default gen_random_uuid(),
+  specimen_id  uuid not null references public.specimens(id) on delete cascade,
+  author       text not null check (author in ('client','lab')),
+  body         text not null check (char_length(body) between 1 and 4000),
+  seen         boolean not null default false,   -- lab has read a client message
+  created_at   timestamptz not null default now()
+);
+create index if not exists specimen_messages_specimen on public.specimen_messages (specimen_id, created_at);
+
+create or replace function public.owns_specimen(sid uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.specimens
+    where id = sid and stage <> 'declined'
+      and lower(customer_email) = lower(auth.jwt() ->> 'email'));
+$$;
+
+create or replace function public.my_specimens()
+returns table (id uuid, num text, device text, frame_size text, stage text, price numeric, paid numeric,
+               submitted_on date, accepted_on date, received_on date, shipped_on date, due_on date, tracking text)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.num, s.device, s.frame_size, s.stage, s.price, s.paid,
+         s.submitted_on, s.accepted_on, s.received_on, s.shipped_on, s.due_on, s.tracking
+  from public.specimens s
+  where lower(s.customer_email) = lower(auth.jwt() ->> 'email') and s.stage <> 'declined'
+  order by s.created_at desc;
+$$;
+revoke all on function public.my_specimens() from public, anon;
+grant execute on function public.my_specimens() to authenticated;
+revoke all on function public.owns_specimen(uuid) from public, anon;
+grant execute on function public.owns_specimen(uuid) to authenticated;
+
+alter table public.specimen_messages enable row level security;
+drop policy if exists "lab only" on public.specimen_messages;
+create policy "lab only" on public.specimen_messages for all to authenticated
+  using (public.is_lab_admin()) with check (public.is_lab_admin());
+drop policy if exists "client reads own" on public.specimen_messages;
+create policy "client reads own" on public.specimen_messages for select to authenticated
+  using (public.owns_specimen(specimen_id));
+drop policy if exists "client writes own" on public.specimen_messages;
+create policy "client writes own" on public.specimen_messages for insert to authenticated
+  with check (author = 'client' and seen = false and public.owns_specimen(specimen_id));
