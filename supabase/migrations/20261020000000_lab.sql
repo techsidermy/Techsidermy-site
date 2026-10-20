@@ -77,6 +77,15 @@ create table if not exists public.parts (
   updated_at  timestamptz not null default now()
 );
 
+-- Running list: things to buy and notes to self.
+create table if not exists public.lab_notes (
+  id          uuid primary key default gen_random_uuid(),
+  kind        text not null default 'note' check (kind in ('buy','note')),
+  body        text not null,
+  done        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+
 -- keep updated_at current
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
@@ -92,6 +101,7 @@ alter table public.lab_admins enable row level security;
 alter table public.specimens  enable row level security;
 alter table public.inventory  enable row level security;
 alter table public.parts      enable row level security;
+alter table public.lab_notes  enable row level security;
 
 drop policy if exists "lab only" on public.specimens;
 create policy "lab only" on public.specimens for all to authenticated
@@ -101,6 +111,9 @@ create policy "lab only" on public.inventory for all to authenticated
   using (public.is_lab_admin()) with check (public.is_lab_admin());
 drop policy if exists "lab only" on public.parts;
 create policy "lab only" on public.parts for all to authenticated
+  using (public.is_lab_admin()) with check (public.is_lab_admin());
+drop policy if exists "lab only" on public.lab_notes;
+create policy "lab only" on public.lab_notes for all to authenticated
   using (public.is_lab_admin()) with check (public.is_lab_admin());
 drop policy if exists "lab reads admins" on public.lab_admins;
 create policy "lab reads admins" on public.lab_admins for select to authenticated

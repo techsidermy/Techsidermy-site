@@ -31,7 +31,7 @@
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey || !window.supabase) { $('#setup').hidden = false; return; }
   const db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 
-  const state = { specimens: [], inventory: [], parts: [], loaded: false };
+  const state = { specimens: [], inventory: [], parts: [], notes: [], loaded: false };
 
   /* ---------- auth: username + password ---------- */
   $('#login').addEventListener('submit', async (e) => {
@@ -68,13 +68,14 @@
     return true;
   }
   async function loadAll() {
-    const [s, i, p] = await Promise.all([
+    const [s, i, p, n] = await Promise.all([
       db.from('specimens').select('*').order('created_at', { ascending: false }),
       db.from('inventory').select('*').order('category').order('item'),
-      db.from('parts').select('*').order('sort')
+      db.from('parts').select('*').order('sort'),
+      db.from('lab_notes').select('*').order('created_at', { ascending: false })
     ]);
-    if (fail(s.error || i.error || p.error)) return;
-    state.specimens = s.data; state.inventory = i.data; state.parts = p.data; state.loaded = true;
+    if (fail(s.error || i.error || p.error || n.error)) return;
+    state.specimens = s.data; state.inventory = i.data; state.parts = p.data; state.notes = n.data; state.loaded = true;
     render();
   }
 
@@ -129,7 +130,7 @@
     if (!state.loaded) return;
     nav();
     const page = route();
-    ({ overview, submissions: pageSubmissions, bench: pageBench, due: pageDue, inventory: pageInventory, books: pageBooks, parts: pageParts })[page]();
+    ({ overview: () => { overview(); bindJot(); }, submissions: pageSubmissions, bench: pageBench, due: pageDue, inventory: pageInventory, books: pageBooks, parts: pageParts })[page]();
     bindCommon();
   }
   const head = (eyebrow, title, right = '') => `<div class="block-head">
@@ -171,12 +172,68 @@
         </section>
       </div>
 
-      <section class="ov-panel" aria-labelledby="ov-bench-h">
-        <div class="ov-panel-head"><h2 class="label" id="ov-bench-h">The bench</h2><a class="lab-link" href="#bench">${plural(B.length, 'piece')} →</a></div>
-        <ol class="strip">${BENCH.map((s) => { const n = B.filter((x) => x.stage === s).length;
-          return `<li class="${n ? 'has' : ''}"><span class="strip-n">${n}</span><span class="strip-l">${LABEL[s]}</span></li>`; }).join('')}</ol>
-        ${Q.length ? `<a class="strip-q" href="#submissions"><span class="pad"></span>${plural(Q.length, 'submission')} waiting in the queue, oldest ${ago(Q[0].submitted_on || Q[0].created_at)} →</a>` : ''}
+      <section class="ov-panel ov-jot" aria-labelledby="ov-buy-h">
+        <div class="jot-cols">
+          <div class="jot-col">
+            <div class="ov-panel-head"><h2 class="label" id="ov-buy-h">Need to purchase</h2><span class="label">${buyList().length || ''}</span></div>
+            ${buyList().length ? `<ul class="jot">${buyList().map((b) => `<li class="${b.hot ? 'hot' : ''}">
+                <input type="checkbox" id="buy-${b.key}" data-buy="${b.key}" aria-label="Mark ${esc(b.text)} handled">
+                <label for="buy-${b.key}"><span class="jot-t">${esc(b.text)}</span><span class="jot-s">${b.sub}</span></label>
+                ${b.price != null ? `<span class="jot-p">${money(b.price, true)}</span>` : '<span class="jot-p"></span>'}
+              </li>`).join('')}</ul>` : '<p class="empty">Nothing to buy. Stock is above every reorder point.</p>'}
+            ${buyTotal() ? `<p class="sub">About ${money(buyTotal(), true)} for the priced items.</p>` : ''}
+          </div>
+          <div class="jot-col">
+            <div class="ov-panel-head"><h2 class="label" id="ov-notes-h">Notes</h2><span class="label">${notes().length || ''}</span></div>
+            ${notes().length ? `<ul class="jot notes">${notes().map((x) => `<li>
+                <span class="jot-date">${fmtDate(x.created_at)}</span>
+                <span class="jot-t note-body">${esc(x.body)}</span>
+                <button type="button" class="lab-link" data-note-done="${x.id}" aria-label="Clear note">Clear</button>
+              </li>`).join('')}</ul>` : '<p class="empty">No notes. Jot one below.</p>'}
+          </div>
+        </div>
+        <form class="jot-add" id="jot-add" autocomplete="off">
+          <div class="jot-kind" role="radiogroup" aria-label="Add as">
+            <label><input type="radio" name="jot-kind" id="jot-kind-buy" value="buy" checked><span>To buy</span></label>
+            <label><input type="radio" name="jot-kind" id="jot-kind-note" value="note"><span>Note</span></label>
+          </div>
+          <input id="jot-text" type="text" placeholder="Add something to buy or a note to self" aria-label="New item">
+          <button class="btn btn--sm" type="submit">Add</button>
+        </form>
       </section>`;
+  }
+  /* need to purchase: low stock + unbought parts + anything added by hand */
+  const notes = () => state.notes.filter((x) => x.kind === 'note' && !x.done);
+  function buyList() {
+    const out = [];
+    lowStock().forEach((x) => out.push({ key: 'inv-' + x.id, text: x.item, sub: `${Number(x.qty)} ${esc(x.unit)} left · reorder at ${Number(x.reorder_at)}`, hot: true, price: null }));
+    state.notes.filter((x) => x.kind === 'buy' && !x.done)
+      .forEach((x) => out.push({ key: 'note-' + x.id, text: x.body, sub: 'added ' + ago(x.created_at), price: null }));
+    state.parts.filter((x) => !x.bought)
+      .forEach((x) => out.push({ key: 'part-' + x.id, text: x.item, sub: 'parts list' + (x.per_piece ? ' · per piece' : ''), price: x.price }));
+    return out;
+  }
+  const buyTotal = () => state.parts.filter((x) => !x.bought).reduce((a, x) => a + Number(x.price || 0), 0);
+  function bindJot() {
+    const form = $('#jot-add');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = $('#jot-text').value.trim();
+      if (!body) { $('#jot-text').focus(); return; }
+      const kind = $('#jot-kind-note').checked ? 'note' : 'buy';
+      if (await save('lab_notes', null, { kind, body })) {
+        (kind === 'note' ? $('#jot-kind-note') : $('#jot-kind-buy')).checked = true;
+        $('#jot-text').focus();
+      }
+    });
+    $$('[data-buy]').forEach((c) => c.addEventListener('change', () => {
+      const [type, ...rest] = c.dataset.buy.split('-'), id = rest.join('-');
+      if (type === 'note') save('lab_notes', id, { done: true });
+      else if (type === 'part') save('parts', id, { bought: true });
+      else if (type === 'inv') { c.checked = false; editInv(id); }   // restocking means updating the count
+    }));
+    $$('[data-note-done]').forEach((b) => b.addEventListener('click', () => save('lab_notes', b.dataset.noteDone, { done: true })));
   }
   const ratio = (x) => x.reorder_at ? Number(x.qty) / Math.max(1, Number(x.reorder_at)) : 99;
 
@@ -399,12 +456,13 @@
   }
 
   /* ---------- shared: save, drawer, two-tap ---------- */
+  const KEY = { lab_notes: 'notes' };
   async function save(table, id, patch) {
     const q = id ? db.from(table).update(patch).eq('id', id).select().single()
                  : db.from(table).insert(patch).select().single();
     const { data, error } = await q;
     if (fail(error)) return false;
-    const list = state[table], i = list.findIndex((r) => r.id === data.id);
+    const list = state[KEY[table] || table], i = list.findIndex((r) => r.id === data.id);
     if (i >= 0) list[i] = data; else list.unshift(data);
     render();
     return true;
@@ -458,7 +516,7 @@
     const { table, id } = current;
     const { error } = await db.from(table).delete().eq('id', id);
     if (fail(error)) return;
-    state[table] = state[table].filter((r) => r.id !== id);
+    state[KEY[table] || table] = state[KEY[table] || table].filter((r) => r.id !== id);
     close(); render();
   });
 })();
