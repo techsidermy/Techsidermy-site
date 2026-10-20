@@ -1,7 +1,8 @@
-# Static site: no build step. Netlify serves this folder as-is.
+# Static site. The only build step is a dependency-free Node script that writes
+# one page per specimen, the Archive's catalogue index and sitemap.xml from js/data.js.
 [build]
   publish = "."
-  command = ""
+  command = "node tools/build.mjs"
 
 # Keep the project notes out of the public site
 [[redirects]]
@@ -21,3 +22,14 @@
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
     Cache-Control = "no-store"
+
+[[redirects]]
+  from = "/tools/*"
+  to = "/404"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/supabase/*"
+  to = "/404"
+  status = 404
+  force = true

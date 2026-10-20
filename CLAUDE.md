@@ -5,7 +5,9 @@ wood shadowboxes; larger series pieces at 24 × 36). Tagline: "Specimens of obso
 Tone: clinical, museum-meets-gallery, quiet confidence. Based in Sedona, Arizona.
 
 ## Stack
-Static HTML/CSS/JS. No framework, no build. Keep it that way unless asked.
+Static HTML/CSS/JS. No framework. The only build step is `node tools/build.mjs` (no dependencies), run by
+Netlify on deploy: it writes `specimen-<num>.html` pages, the Archive catalogue index and `sitemap.xml`
+from `js/data.js`. Those files are generated; edit `js/data.js` or the template in `tools/build.mjs`.
 Shared header and footer are injected by `js/site.js` (`data-site-head`, `data-site-foot`).
 All specimen/store content comes from `js/data.js`.
 
@@ -28,3 +30,8 @@ lab data lives in Supabase (schema in `supabase/migrations/`); keys in `js/lab-c
 security limits every table to emails in `lab_admins`. Never expose the specimens table to customers;
 customers use status (/status): emailed sign-in link, data only through `my_specimens()` (safe columns)
 and `specimen_messages` RLS. Never add internal notes, costs or margin to what customers can read.
+
+## Search
+Every public page has a unique title, a description under 155 characters, a canonical URL on
+https://techsidermy.store, Open Graph tags and JSON-LD inside its `<!-- seo -->` block. Keep them in
+sync when page content changes. /lab and /status stay out of search (noindex, robots.txt).

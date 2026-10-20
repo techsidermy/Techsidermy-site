@@ -2,3 +2,5 @@
 *.log
 node_modules/
 .netlify/
+specimen-*.html
+sitemap.xml

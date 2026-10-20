@@ -249,7 +249,8 @@
           <img src="${c.img}" alt="${c.name}" loading="lazy"><span class="cn">${c.n}</span><span class="ct">${c.name}</span><span class="cs">${c.spec}</span></button>`).join('')}</div></div>`
       : (s.parts.length ? `<div><span class="label">Components · ${s.parts.length}</span>
         <ul class="parts mt-1">${s.parts.map((p, k) => `<li><b>${String(k + 1).padStart(2, '0')}</b>${p}</li>`).join('')}</ul></div>` : '')}
-      ${buy}`;
+      ${buy}
+      ${/^\d+$/.test(s.num) ? `<a class="mono-sm permalink" href="specimen-${s.num}.html"><u>Open the full specimen page</u> →</a>` : ''}`;
     $$('.comp', $('#d-info')).forEach((b) => b.addEventListener('click', () => {
       const c = s.components[+b.dataset.c];
       $$('#d-thumbs button, .comp').forEach((x) => x.setAttribute('aria-current', x === b));

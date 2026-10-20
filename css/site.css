@@ -602,3 +602,22 @@ a.slot:hover .media::before, a.slot:hover .media::after { background: var(--trac
 .slot--reserved .media { border-bottom-style: solid; }
 .slot--reserved .meta { font: 400 11.5px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .field label.check { font: 400 13px/1.55 var(--f-mono); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+
+/* ---------- specimen pages + catalogue index (search build) ---------- */
+.crumbs { margin-bottom: 18px; }
+.spec-page { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(28px, 5vw, 64px); align-items: start; }
+@media (max-width: 860px) { .spec-page { grid-template-columns: 1fr; } }
+.spec-figs { display: grid; gap: 28px; }
+.spec-figs figure { margin: 0; display: grid; gap: 10px; }
+.spec-figs img { width: 100%; height: auto; background: var(--panel); border: 1px solid var(--rule); }
+.spec-info { display: grid; gap: 28px; position: sticky; top: 96px; }
+@media (max-width: 860px) { .spec-info { position: static; } }
+.permalink { display: inline-block; margin-top: 4px; }
+.catalogue { display: grid; gap: 12px; }
+.catalogue ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.catalogue a { display: grid; grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--rule); font: 400 13px/1.4 var(--f-mono); }
+.catalogue a:hover { background: var(--panel); }
+.c-num { color: var(--ink-3); }
+.c-name { font-weight: 500; }
+.c-meta, .c-stat { color: var(--ink-3); }
+@media (max-width: 640px) { .catalogue a { grid-template-columns: 64px minmax(0, 1fr); } .c-meta, .c-stat { grid-column: 2; } }

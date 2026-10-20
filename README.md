@@ -50,7 +50,9 @@ Until a link is added, the button opens an email to techsidermy@gmail.com.
 ## Adding a specimen
 
 Copy any block in `js/data.js`, change the number, name, status and images, and drop the images
-into `assets/img/`. The Archive, the home page and the detail panels update automatically.
+into `assets/img/`. The Archive, the home page and the detail panels update automatically, and on
+the next deploy Netlify builds its own search-friendly page at `/specimen-<number>` and adds it to
+the sitemap. To preview those pages locally, run `node tools/build.mjs` first.
 
 - `hidden: true` keeps a specimen out of the Archive until it's ready (0002, 0003, the NES set and
   the forthcoming series are already in the file, hidden). Flip it to `false` to publish one.
