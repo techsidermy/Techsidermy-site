@@ -6,5 +6,8 @@
    ========================================================================== */
 window.LAB_CONFIG = {
   supabaseUrl: '',      // e.g. 'https://abcdefghijkl.supabase.co'
-  supabaseAnonKey: ''   // the long "anon public" key
+  supabaseAnonKey: '',  // the long "anon public" key
+  // Sign-in usernames → the email of that user in Supabase Auth.
+  // Passwords are NOT stored here; they live (hashed) in Supabase.
+  users: { chase: 'techsidermy@gmail.com' }
 };

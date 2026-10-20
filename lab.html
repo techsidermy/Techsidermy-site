@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <link rel="stylesheet" href="css/site.css?v=15">
-<link rel="stylesheet" href="css/lab.css?v=2">
+<link rel="stylesheet" href="css/lab.css?v=3">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 </head>
 <body data-page="lab">
@@ -29,9 +29,11 @@
     <span class="label">Restricted · lab staff only</span>
     <h1 class="h2 mt-1">Sign in<span class="dot">.</span></h1>
     <form id="login" class="gate-form" novalidate>
-      <label class="label" for="login-email">Email</label>
-      <input id="login-email" type="email" autocomplete="email" required placeholder="techsidermy@gmail.com">
-      <button class="btn" type="submit">Send sign-in link</button>
+      <label class="label" for="login-user">Username</label>
+      <input id="login-user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <label class="label" for="login-pass">Password</label>
+      <input id="login-pass" type="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Sign in</button>
       <p class="mono-sm" id="login-msg" role="status"></p>
     </form>
   </section>
@@ -45,12 +47,9 @@
 
   <!-- signed in -->
   <section id="app" hidden>
+    <nav class="lab-nav" id="lab-nav" aria-label="Command center"></nav>
     <p class="lab-error" id="err" role="alert" hidden></p>
-    <div id="summary" class="summary" aria-label="Today at the lab"></div>
-
-    <section class="block" id="queue" aria-labelledby="queue-h"></section>
-    <section class="block" id="bench" aria-labelledby="bench-h"></section>
-    <section class="block" id="shelf" aria-labelledby="shelf-h"></section>
+    <div id="view" class="view"></div>
   </section>
 </main>
 
@@ -67,7 +66,7 @@
 </aside>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="js/lab-config.js?v=1"></script>
-<script src="js/lab.js?v=2"></script>
+<script src="js/lab-config.js?v=2"></script>
+<script src="js/lab.js?v=3"></script>
 </body>
 </html>
