@@ -90,6 +90,10 @@
   const dated = () => onBench().filter((x) => x.due_on).sort((a, b) => a.due_on.localeCompare(b.due_on));
   const dueWeek = () => dated().filter((x) => daysFrom(x.due_on) <= 7);
   const live = () => state.specimens.filter((x) => !['submitted', 'declined'].includes(x.stage));
+  /* payment model: one payment, in full, when a submission is accepted */
+  const owedOn = (x) => Math.max(0, Number(x.price || 0) - Number(x.paid || 0));
+  const isPaid = (x) => x.price != null && Number(x.price) > 0 && owedOn(x) === 0;
+  const unpaid = () => state.specimens.filter((x) => !isArchive(x) && BENCH.includes(x.stage) && owedOn(x) > 0);
   const isArchive = (x) => x.kind === 'archive' || x.kind === 'series';
   function books() {
     const L = live();
@@ -136,7 +140,7 @@
     ['due',         'Due',         () => dueWeek().length, 'this week'],
     ['archive',     'Archive',     () => archive().filter((x) => x.sale_status === 'available').length, 'for sale'],
     ['inventory',   'Inventory',   () => lowStock().length, 'low'],
-    ['books',       'Books',       () => money(books().outstanding), 'owed'],
+    ['books',       'Books',       () => money(books().outstanding), 'unpaid'],
     ['parts',       'Parts',       () => `${state.parts.filter((x) => x.bought).length}/${state.parts.length}`, 'bought']
   ];
   const ALERT = { submissions: () => submissions().length > 0, due: () => dueWeek().length > 0, inventory: () => lowStock().length > 0 };
@@ -173,7 +177,7 @@
       <section class="ov-money" aria-label="Money">
         <div class="ov-big"><span class="label">Received</span><b>${money(b.received)}</b><span class="sub">of ${money(b.booked)} booked</span>
           <span class="meter" aria-hidden="true"><i style="width:${b.booked ? Math.min(100, (b.received / b.booked) * 100) : 0}%"></i></span></div>
-        <div><span class="label">Owed to you</span><b>${money(b.outstanding)}</b><span class="sub">on ${plural(live().filter((x) => Number(x.price || 0) > Number(x.paid || 0)).length, 'piece')}</span></div>
+        <div><span class="label">Awaiting payment</span><b>${money(b.outstanding)}</b><span class="sub">${plural(unpaid().length, 'accepted piece')} not yet paid</span></div>
         <div><span class="label">Spent</span><b>${money(b.spent)}</b><span class="sub">${money(b.supplies)} supplies · ${money(b.pieceCosts)} on pieces</span></div>
         <div><span class="label">Net so far</span><b class="${b.net < 0 ? 'neg' : ''}">${money(b.net)}</b><span class="sub">received minus spent</span></div>
       </section>
@@ -273,12 +277,9 @@
       if (d < 0) out.push({ text: `${name} is ${plural(-d, 'day')} late`, sub: LABEL[x.stage], href: '#bench', edit: x.id, hot: true });
       else if (d <= 3) out.push({ text: `${name} due ${d === 0 ? 'today' : d === 1 ? 'tomorrow' : 'in ' + d + ' days'}`, sub: LABEL[x.stage], href: '#bench', edit: x.id, hot: d <= 1 });
     });
-    state.specimens.filter((x) => x.stage === 'accepted' && x.price && !Number(x.paid))
-      .forEach((x) => out.push({ text: `Collect deposit for ${esc(x.device)}`, sub: `${money(x.price / 2)} · 50%`, href: '#books', edit: x.id }));
+    unpaid().forEach((x) => out.push({ text: `Collect payment for ${esc(x.device)}`, sub: `${money(owedOn(x))} · paid in full`, href: '#bench', edit: x.id, hot: true }));
     state.specimens.filter((x) => x.stage === 'awaiting_device' && x.accepted_on && daysFrom(x.accepted_on) <= -14)
       .forEach((x) => out.push({ text: `Nudge ${esc(x.customer_name || 'client')} to ship ${esc(x.device)}`, sub: `accepted ${ago(x.accepted_on)}`, href: '#bench', edit: x.id }));
-    state.specimens.filter((x) => ['shipped', 'complete'].includes(x.stage) && Number(x.price || 0) > Number(x.paid || 0))
-      .forEach((x) => out.push({ text: `Collect balance on ${esc(x.device)}`, sub: money(x.price - x.paid), href: '#books', edit: x.id, hot: true }));
     lowStock().forEach((x) => out.push({ text: `Reorder ${esc(x.item)}`, sub: `${Number(x.qty)} ${esc(x.unit)} left`, href: '#inventory' }));
     return out;
   }
@@ -287,14 +288,16 @@
   function pageSubmissions() {
     const Q = submissions();
     $('#view').innerHTML = `
-      ${head('Intake queue', 'Submissions', '<button class="lab-link" type="button" id="new-sub">+ Log a submission</button>')}
+      ${head('Intake queue · reviewed by hand', 'Submissions', '<button class="lab-link" type="button" id="new-sub">+ Log a submission</button>')}
+      <p class="sub mode-note">Accepting gives the piece its Archive number and moves it to the bench. Payment is taken in full on acceptance, so unpaid pieces show a <b>Mark paid</b> button on the bench.</p>
       ${Q.length ? `<div class="subs">${Q.map((x) => `
         <article class="sub-card">
-          <header><span class="label">Received ${ago(x.submitted_on || x.created_at)}</span>${x.frame_size ? `<span class="tag">${esc(x.frame_size)}</span>` : ''}</header>
+          <header><span class="label">Received ${ago(x.submitted_on || x.created_at)}</span><span class="tags">${isPaid(x) ? '<span class="tag ok">Paid</span>' : ''}${x.frame_size ? `<span class="tag">${esc(x.frame_size)}</span>` : ''}</span></header>
           <h3 class="h3">${esc(x.device)}</h3>
           <p class="sub-meta">${[x.device_type, x.device_year].filter(Boolean).map(esc).join(' · ')}${x.customer_name ? `<br>${esc(x.customer_name)}${x.customer_email ? ' · ' + esc(x.customer_email) : ''}` : ''}</p>
           ${x.story ? `<p class="client-note">“${esc(x.story)}”</p>` : ''}
           ${x.note ? `<p class="sub-meta"><span class="label">For the plate</span><br>${esc(x.note)}</p>` : ''}
+          <p class="sub-meta pay-line">${x.price ? `${money(x.price)} ${isPaid(x) ? 'paid in full' : 'due in full on acceptance'}` : 'No price set yet'}</p>
           <footer>
             <button class="btn btn--sm" type="button" data-accept="${x.id}">Accept</button>
             <button class="lab-link" type="button" data-edit="${x.id}">Details</button>
@@ -326,6 +329,7 @@
       </ol>
       ${done.length ? `<details class="drawer-sec"><summary><span class="label">Delivered & declined · ${done.length}</span></summary>
         <ul class="mini">${done.map((x) => `<li><button type="button" data-edit="${x.id}"><span>${x.num ? 'Nº ' + esc(x.num) + ' · ' : ''}${esc(x.device)}</span><span class="tag${x.stage === 'complete' ? ' ok' : ''}">${LABEL[x.stage]}</span></button></li>`).join('')}</ul></details>` : ''}`;
+    $$('[data-paid]').forEach((b) => b.addEventListener('click', () => { const x = byId(b.dataset.paid); save('specimens', x.id, { paid: Number(x.price) }); }));
     $$('[data-next]').forEach((b) => b.addEventListener('click', () => {
       const x = byId(b.dataset.next), stage = NEXT[x.stage], patch = { stage };
       if (stage === 'received' && !x.received_on) patch.received_on = today();
@@ -344,7 +348,10 @@
         <span class="spec-meta">${esc(x.customer_name || (x.kind === 'archive' ? 'Archive piece' : x.kind === 'series' ? 'Series piece' : ''))}</span>
         <span class="track" aria-label="Step ${step + 1} of ${BENCH.length}">${BENCH.map((_, i) => `<i class="${i < step ? 'past' : i === step ? 'now' : ''}"></i>`).join('')}</span>
       </button>
-      ${NEXT[x.stage] ? `<button type="button" class="next" data-next="${x.id}">Move to ${LABEL[NEXT[x.stage]]} →</button>` : ''}
+      <div class="card-actions">
+        ${!isArchive(x) && owedOn(x) > 0 ? `<button type="button" class="pay" data-paid="${x.id}"><span class="pay-pad"></span>Mark paid · ${money(owedOn(x))}</button>` : ''}
+        ${NEXT[x.stage] ? `<button type="button" class="next" data-next="${x.id}">Move to ${LABEL[NEXT[x.stage]]} →</button>` : ''}
+      </div>
     </article>`;
   }
 
@@ -471,12 +478,12 @@
       <dl class="books">
         <div><dt class="label">Booked</dt><dd>${money(b.booked, true)}</dd></div>
         <div><dt class="label">Received</dt><dd>${money(b.received, true)}</dd></div>
-        <div><dt class="label">Owed to you</dt><dd>${money(b.outstanding, true)}</dd></div>
+        <div><dt class="label">Awaiting payment</dt><dd>${money(b.outstanding, true)}</dd></div>
         <div><dt class="label">Spent</dt><dd>${money(b.spent, true)}</dd><span class="sub">${money(b.supplies, true)} supplies · ${money(b.pieceCosts, true)} on pieces</span></div>
       </dl>
       <section class="due-group"><h2 class="label">By piece</h2>
       ${L.length ? `<div class="table-wrap"><table class="ledger">
-        <thead><tr><th>Piece</th><th>Stage</th><th class="r">Price</th><th class="r">Paid</th><th class="r">Owed</th><th class="r">Costs</th><th class="r">Margin</th></tr></thead>
+        <thead><tr><th>Piece</th><th>Stage</th><th class="r">Price</th><th class="r">Paid</th><th class="r">Unpaid</th><th class="r">Costs</th><th class="r">Margin</th></tr></thead>
         <tbody>${L.map((x) => { const owed = Number(x.price || 0) - Number(x.paid || 0), margin = Number(x.price || 0) - Number(x.costs || 0);
           return `<tr data-edit="${x.id}"><td><b>${x.num ? 'Nº ' + esc(x.num) + ' · ' : ''}${esc(x.device)}</b><span class="sub">${esc(x.customer_name || x.kind)}</span></td>
             <td><span class="tag">${LABEL[x.stage]}</span></td>
@@ -523,7 +530,7 @@
     ['customer_name', 'Client name', 'text'], ['customer_email', 'Client email', 'email'],
     ['device_type', 'Device type', 'text'], ['device_year', 'Year', 'text'],
     ['frame_size', 'Frame size', 'select', { options: [['', '—'], ['S', 'S · 8 × 10'], ['M', 'M · 11 × 14'], ['L', 'L · 16 × 20'], ['XL', 'XL · 22 × 28']] }],
-    ['price', 'Price', 'number'], ['paid', 'Paid so far', 'number'], ['costs', 'Costs on this piece', 'number'],
+    ['price', 'Price (paid in full)', 'number'], ['paid', 'Amount paid', 'number'], ['costs', 'Costs on this piece', 'number'],
     ['due_on', 'Due', 'date'], ['received_on', 'Device received', 'date'],
     ['shipped_on', 'Shipped', 'date'], ['tracking', 'Tracking Nº', 'text'],
     ['story', 'Their story', 'textarea'], ['note', 'Note for the plate', 'textarea'],

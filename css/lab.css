@@ -313,3 +313,15 @@
 .bd-row { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .bd-row.total { color: var(--ink); font-weight: 500; border-top: 1px solid var(--rule); padding-top: 8px; margin-top: 4px; }
 .bd-row.total.neg { color: var(--accent); }
+
+/* payment in full */
+.tags { display: inline-flex; gap: 6px; }
+.pay-line { color: var(--ink-3); }
+.mode-note { margin: -14px 0 0; max-width: 72ch; }
+.mode-note b { font-weight: 500; color: var(--ink-2); }
+.card-actions { display: grid; border-top: 1px solid var(--rule); }
+.card-actions > .next { border-top: 0; }
+.card-actions > .pay + .next { border-top: 1px solid var(--rule); }
+.pay { display: flex; align-items: center; gap: 10px; text-align: left; padding: 11px 16px; font: 400 11px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+.pay-pad { width: 7px; height: 7px; background: var(--accent); flex: none; }
+.pay:hover { background: var(--paper); }

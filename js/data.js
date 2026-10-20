@@ -176,5 +176,5 @@ window.COMMISSION = {
   returnShipping: 'Insured return shipping, quoted when your spot opens',
   turnaround: '3–4 weeks from intake',
   queue: 'Intake queue open · spots held in order received',
-  checkout: ''   // ← optional Stripe Payment Link for the 50% deposit
+  checkout: ''   // ← optional Stripe Payment Link for payment in full (charged once accepted)
 };
