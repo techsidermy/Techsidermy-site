@@ -4,6 +4,23 @@
   publish = "."
   command = "node tools/build.mjs"
 
+# One home for search: send the .shop domain (and www) to techsidermy.store, keeping the path.
+[[redirects]]
+  from = "https://techsidermy.shop/*"
+  to = "https://techsidermy.store/:splat"
+  status = 301
+  force = true
+[[redirects]]
+  from = "https://www.techsidermy.shop/*"
+  to = "https://techsidermy.store/:splat"
+  status = 301
+  force = true
+[[redirects]]
+  from = "https://www.techsidermy.store/*"
+  to = "https://techsidermy.store/:splat"
+  status = 301
+  force = true
+
 # Keep the project notes out of the public site
 [[redirects]]
   from = "/README.md"
